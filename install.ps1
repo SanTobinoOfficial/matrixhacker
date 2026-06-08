@@ -37,7 +37,7 @@ try {
 } catch {
     Write-Host "[!] Download failed: $_" -ForegroundColor Red
     Write-Host "[!] Check your internet connection and try again." -ForegroundColor Yellow
-    Write-Host "    URL attempted: $zipUrl" -ForegroundColor Yellow
+    Write-Host "    URL: $zipUrl" -ForegroundColor Yellow
     exit 1
 }
 
