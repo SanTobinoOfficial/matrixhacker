@@ -1,0 +1,21 @@
+# OS
+Thumbs.db
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# Temp
+temp/
+tmp/
+*.tmp
+
+# Environment
+.env
+.env.local
+
+# PowerShell
+*.ps1xml

