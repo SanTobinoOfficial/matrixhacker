@@ -257,6 +257,24 @@ $script:Themes = @{
         chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&<>*+="
         overlayMsgs = @()
     }
+    learning = @{
+        name = "Tryb Nauki"
+        id = "learning"
+        matrixStyle = "matrix"
+        promptColor = "Cyan"
+        matrixHead = "White"
+        matrixBright = "Cyan"
+        matrixBody = "Blue"
+        matrixTail = "DarkBlue"
+        accent = "Green"
+        errorColor = "Red"
+        briefColor = "Cyan"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&<>*+="
+        overlayMsgs = @(
+            "TRYB NAUKI: AKTYWNY",
+            "ZADANIE: WPROWADZ POLEGENIE"
+        )
+    }
 }
 
 function Get-Theme {

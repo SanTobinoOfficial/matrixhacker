@@ -10,8 +10,9 @@ $scriptPath = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocati
 . "$scriptPath/engine/helpers.ps1"
 . "$scriptPath/engine/platform.ps1"
 . "$scriptPath/engine/core.ps1"
+. "$scriptPath/engine/learning_engine.ps1"
 
-Get-ChildItem "$scriptPath/modes" -Filter *.ps1 | ForEach-Object { . $_.FullName }
+Get-ChildItem "$scriptPath/modes" -Filter *.ps1 -Recurse | ForEach-Object { . $_.FullName }
 
 $modes = @(
     @{ Id = "realistic"; Name = "Realistic Terminal"; Desc = "Authentic Linux terminal session" }
@@ -29,6 +30,7 @@ $modes = @(
     @{ Id = "darkweb"; Name = "Dark Web"; Desc = "Navigate the darknet" }
     @{ Id = "ctf_mode"; Name = "CTF Challenge"; Desc = "Find the hidden flag" }
     @{ Id = "screensaver"; Name = "Matrix Screensaver"; Desc = "Infinite Matrix rain" }
+    @{ Id = "learning"; Name = "Tryb Nauki"; Desc = "Interaktywny symulator terminala (11 systemow)" }
 )
 
 $modeMap = @{}
@@ -38,6 +40,18 @@ function Start-Mode {
     param([string]$Id)
     $mode = $modeMap[$Id]
     if (-not $mode) { Write-Host "Error: unknown mode '$Id'" -ForegroundColor Red; return }
+
+    if ($Id -eq "learning") {
+        $sys = Show-LearningSelector
+        if ($sys) {
+            $diff = Show-DifficultySelector $sys
+            if ($diff) {
+                Start-LearningMode -SystemId $sys.Id -Difficulty $diff.Id
+            }
+        }
+        return
+    }
+
     $theme = Get-Theme $Id
     $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
@@ -142,6 +156,14 @@ function Show-CliLauncher {
     $num = 0
     if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $modes.Length) {
         $mode = $modes[$num - 1]
+        if ($mode.Id -eq "learning") {
+            $sys = Show-LearningSelector
+            if ($sys) {
+                $diff = Show-DifficultySelector $sys
+                if ($diff) { Start-LearningMode -SystemId $sys.Id -Difficulty $diff.Id }
+            }
+            return
+        }
         $theme = Get-Theme $mode.Id
         $funcName = "Build-$($mode.Id.ToUpper())COMMANDS"
         $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
