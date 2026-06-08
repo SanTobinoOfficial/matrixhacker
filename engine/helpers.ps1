@@ -17,7 +17,7 @@ function RandHex($len=8) {
 
 function C($c, $o) { @{ Command = $c; Output = $o } }
 
-function Cp($c, $o) { @{ Command = $c; Output = $o; Progress = $true } }
+function Cprog($c, $o) { @{ Command = $c; Output = $o; Progress = $true } }
 
 # Dynamic prompt with directory tracking
 function Get-DynamicPrompt {
@@ -32,7 +32,7 @@ function Get-DynamicPrompt {
 function Get-SystemNoise {
     param([string]$Hostname)
     $msgs = @(
-        "You have mail in /var/mail/$(Split-Path $script:OS.prompt -Leaf)"
+        "You have mail in /var/mail/mailcheck"
         "Message from syslogd@$Hostname at $(Get-Date -Format 'HH:mm'): sshd[$(Rand 1000 9999)]: Failed password for root from $(RandIP) port $(Rand 40000 60000) ssh2"
         "Message from syslogd@$Hostname at $(Get-Date -Format 'HH:mm'): kernel: [$(Rand 1000000 9999999).$(Rand 100 999)] eth0: link up"
         "Broadcast message from root@$Hostname`n   The system will reboot in 15 minutes."

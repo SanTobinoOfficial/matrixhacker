@@ -296,7 +296,7 @@ function Start-TerminalSession {
     $Host.UI.RawUI.ForegroundColor = "Green"
     Clear-Host
     [console]::CursorVisible = $false
-    $Host.UI.RawUI.WindowTitle = "$ModeName - $TargetHost.$TargetDomain"
+    try { $Host.UI.RawUI.WindowTitle = "$ModeName - $TargetHost.$TargetDomain" } catch { }
     $script:simDir = "~"
     $script:commandHistory = @()
     $script:S_IS_ROOT = $false

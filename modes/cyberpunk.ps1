@@ -30,7 +30,7 @@ function Build-CYBERPUNKCOMMANDS {
             "Pinging 10.0.1.42 ... OK (7ms) — Exec Terminal",
             "",
             "8 hosts alive / 1 timed out")
-        Cp "daemon-connect //data/corp/exec/finance_transfers" @("[DAEMON] //data/corp/exec/finance_transfers — connecting...",
+        Cprog "daemon-connect //data/corp/exec/finance_transfers" @("[DAEMON] //data/corp/exec/finance_transfers — connecting...",
             "[AUTH] Credentials required",
             "[AUTH] Using neural handshake...",
             "[AUTH] Biometric match: 98.7% — Access granted",

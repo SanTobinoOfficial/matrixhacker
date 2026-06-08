@@ -17,7 +17,7 @@ function Build-MRROBOTCOMMANDS {
             "trenton            — Trenton",
             "whiterose          — Whiterose (Minister Zhang)",
             "tyrell             — Tyrell Wellick (ally)")
-        Cp "ddos --target 'https://www.e-corp.com' --workers 500 --duration 120" @("[DDOS] Initializing distributed denial of service...",
+        Cprog "ddos --target 'https://www.e-corp.com' --workers 500 --duration 120" @("[DDOS] Initializing distributed denial of service...",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "  Target:  https://www.e-corp.com",
             "  Workers: 500",
@@ -42,7 +42,7 @@ function Build-MRROBOTCOMMANDS {
             "",
             "  [COMPLETE] 500GB sanitized.",
             "  WARNING: This disk is now blank.")
-        Cp "encrypt --path /mnt/e-corp/data --key fsociety_key.pub" @("[ENCRYPT] Batch encryption — /mnt/e-corp/data",
+        Cprog "encrypt --path /mnt/e-corp/data --key fsociety_key.pub" @("[ENCRYPT] Batch encryption — /mnt/e-corp/data",
             "  Algorithm: RSA-4096 + AES-256-GCM",
             "  Key: fsociety_key.pub",
             "  Files found: 1,247",
@@ -87,7 +87,7 @@ function Build-MRROBOTCOMMANDS {
             "Disallow: /finance",
             "Disallow: /secret/",
             "# fsociety was here — Oct 12, 2015")
-        Cp "sqlmap -u 'https://admin.e-corp.com/login' --dbs --batch" @("        ___",
+        Cprog "sqlmap -u 'https://admin.e-corp.com/login' --dbs --batch" @("        ___",
             "       __H__",
             " ___ ___[(]_____ ___ ___  {1.8.2#stable}",
             "|_ -| . [']     | .'| . |",

@@ -33,7 +33,7 @@ function Build-MATRIXCOMMANDS {
             "    > 1514 H Street NW, Washington DC",
             "    > Phone: (202) 555-0142",
             "    > Status: ACTIVE (not guarded)")
-        Cp "sentinel-scan --range 100m" @("[SENTINEL] Active scan — 100m radius",
+        Cprog "sentinel-scan --range 100m" @("[SENTINEL] Active scan — 100m radius",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "  Scanning constructs...",
             "  ████████████████████████████████████████ 100%",

@@ -1,6 +1,3 @@
-# =====================================================================
-# ULTRA MATRIX TERMINAL — Launcher (WinForms GUI + CLI fallback)
-# =====================================================================
 param(
     [switch]$CLI,
     [string]$Mode,
@@ -9,12 +6,11 @@ param(
 
 $scriptPath = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
 
-# Source engine
 . "$scriptPath\engine\themes.ps1"
 . "$scriptPath\engine\helpers.ps1"
+. "$scriptPath\engine\platform.ps1"
 . "$scriptPath\engine\core.ps1"
 
-# Source all modes silently
 Get-ChildItem "$scriptPath\modes" -Filter *.ps1 | ForEach-Object { . $_.FullName }
 
 $modes = @(
@@ -37,10 +33,6 @@ $modes = @(
 
 $modeMap = @{}
 foreach ($m in $modes) { $modeMap[$m.Id] = $m }
-
-# =====================================================================
-# FUNCTIONS
-# =====================================================================
 
 function Start-Mode {
     param([string]$Id)
@@ -123,10 +115,12 @@ function Show-GuiLauncher {
 
 function Show-CliLauncher {
     param($modes)
+    $platform = Get-Platform
     $Host.UI.RawUI.BackgroundColor = "Black"
     Clear-Host
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "   ULTRA MATRIX TERMINAL" -ForegroundColor Green
+    Write-Host "   $platform" -ForegroundColor DarkGray
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
     $i = 1
@@ -158,10 +152,6 @@ function Show-CliLauncher {
     }
 }
 
-# =====================================================================
-# MAIN EXECUTION
-# =====================================================================
-
 if ($Help) {
     Write-Host "Ultra Matrix Terminal Launcher" -ForegroundColor Cyan
     Write-Host "USAGE: .\launcher.ps1 [options]" -ForegroundColor Gray
@@ -180,7 +170,8 @@ if ($Mode) {
     return
 }
 
-if (-not $CLI) {
+$platform = Get-Platform
+if (-not $CLI -and $platform -eq "Windows") {
     try { Show-GuiLauncher $modes; return } catch { }
 }
 

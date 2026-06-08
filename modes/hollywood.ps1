@@ -15,7 +15,7 @@ function Build-HOLLYWOODCOMMANDS {
             "        TX packets 89201  bytes 12345678 (11.8 MB)",
             "        RX errors 0  dropped 2  overruns 0  frame 0",
             "        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0")
-        Cp "nmap -sV -sC -p- 192.168.1.0/24" @("Starting Nmap 7.94 ( https://nmap.org ) at 2026-03-16 04:20 EDT",
+        Cprog "nmap -sV -sC -p- 192.168.1.0/24" @("Starting Nmap 7.94 ( https://nmap.org ) at 2026-03-16 04:20 EDT",
             "Nmap scan report for 192.168.1.1",
             "Host is up (0.0023s latency).",
             "Not shown: 65532 closed tcp ports (reset)",
@@ -54,7 +54,7 @@ function Build-HOLLYWOODCOMMANDS {
             "",
             "meterpreter > getuid",
             "Server username: NT AUTHORITY\SYSTEM")
-        Cp "sqlmap -u 'http://192.168.1.1/login.php' --dbs --batch" @("        ___",
+        Cprog "sqlmap -u 'http://192.168.1.1/login.php' --dbs --batch" @("        ___",
             "       __H__",
             " ___ ___[,]_____ ___ ___  {1.8.2#stable}",
             "|_ -| . [,]     | .'| . |",
@@ -114,7 +114,7 @@ function Build-HOLLYWOODCOMMANDS {
             "-rw------- 1 root root 2610 Mar 14 22:10 id_rsa",
             "-rw-r--r-- 1 root root  575 Mar 14 22:10 id_rsa.pub",
             "-rw-r--r-- 1 root root 1024 Mar 15 12:33 known_hosts")
-        C "python3 -c \"import pty; pty.spawn('/bin/bash')\"" @("root@rootnode:/# ")
+        C "python3 -c `"import pty; pty.spawn('/bin/bash')`"" @("root@rootnode:/# ")
         C "ls -la /usr/share/wordlists/" @("total 1048576",
             "drwxr-xr-x  2 root root      4096 Mar 12 2024 .",
             "drwxr-xr-x 76 root root      4096 Mar 12 2024 ..",
@@ -122,7 +122,7 @@ function Build-HOLLYWOODCOMMANDS {
             "-rw-r--r--  1 root root  52437800 Mar 12 2024 rockyou.txt.gz",
             "-rw-r--r--  1 root root   4996537 Mar 12 2024 fasttrack.txt",
             "-rw-r--r--  1 root root   2824361 Mar 12 2024 common-passwords.txt")
-        Cp "aircrack-ng -a2 -b 00:1A:2B:3C:4D:5E capture.cap" @("Reading packets, please wait...",
+        Cprog "aircrack-ng -a2 -b 00:1A:2B:3C:4D:5E capture.cap" @("Reading packets, please wait...",
             "Opening capture.cap",
             "Read 24523 packets.",
             "",

@@ -64,7 +64,7 @@ function Build-PolskaCommands {
             "1 packets transmitted, 1 received, 0% packet loss",
             "[POLICE RADIO INTERCEPT]",
             "--- [DO 47-MELDUNEK] mamy sygnal z IP 192.168.1.213, powtarzam adres zidentyfikowany ---")
-        C "mysqldump -u root -p -h 10.0.0.3 nfz_pacjenci --tables pacjenci --where='pesel LIKE \"%69\"' 2>/dev/null" @("-- MySQL dump 10.13  Distrib 5.7.42, for Linux (x86_64)",
+        C "mysqldump -u root -p -h 10.0.0.3 nfz_pacjenci --tables pacjenci --where='pesel LIKE `"%69`"' 2>/dev/null" @("-- MySQL dump 10.13  Distrib 5.7.42, for Linux (x86_64)",
             "-- Host: 10.0.0.3    Database: nfz_pacjenci",
             "-- Server version	5.7.42-0ubuntu0.18.04.1",
             "INSERT INTO pacjenci VALUES (1,'Janusz','Kowalski','69010100001','Warszawa','leczenie prywatne'),

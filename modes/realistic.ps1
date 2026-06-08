@@ -51,7 +51,7 @@ function Build-REALISTICCOMMANDS {
             "tmpfs           3.9G     0  3.9G   0% /dev/shm",
             "tmpfs           5.0M     0  5.0M   0% /run/lock",
             "/dev/sdb1       500G  210G  290G  42% /mnt/backup")
-        Cp "free -m" @("               total        used        free      shared  buff/cache   available",
+        Cprog "free -m" @("               total        used        free      shared  buff/cache   available",
             "Mem:            7869        3245        2102         234        2522        4123",
             "Swap:           2048          34        2014")
         C "ps aux --sort=-%mem | head -8" @("USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND",
