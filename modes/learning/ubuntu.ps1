@@ -16,7 +16,7 @@ function Get-LearningContent-ubuntu {
                     )}
                 }}
                 Projects = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{}}
-                .bashrc = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
+                'bashrc' = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
                     "# ~/.bashrc", "alias ll='ls -la'", "alias gs='git status'",
                     "export PS1='\u@\h:\w\$ '", "export EDITOR=nano"
                 )}
@@ -42,11 +42,11 @@ function Get-LearningContent-ubuntu {
             )}
             hostname = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @("ubuntu-server")}
             os_release = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
-                "PRETTY_NAME=\"Ubuntu 24.04 LTS\"", "NAME=\"Ubuntu\"",
-                "VERSION_ID=\"24.04\"", "VERSION_CODENAME=noble", "ID=ubuntu"
+                'PRETTY_NAME="Ubuntu 24.04 LTS"', 'NAME="Ubuntu"',
+                "VERSION_ID=24.04", "VERSION_CODENAME=noble", "ID=ubuntu"
             )}
         }}
-        var = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
+        'var' = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             log = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
                 syslog = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
                     "Jun  8 08:00:01 ubuntu CRON[1234]: pam_unix(cron:session): session opened",
@@ -61,9 +61,9 @@ function Get-LearningContent-ubuntu {
                 auth_log = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
                     "Jun  8 08:00:01 ubuntu sshd[2345]: Accepted publickey for student from 10.0.0.10",
                     "Jun  8 08:10:00 ubuntu sudo: student : TTY=pts/0 ; USER=root ; COMMAND=/bin/systemctl restart nginx",
-                    "Jun  8 08:20:00 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54321 ssh2",
-                    "Jun  8 08:20:05 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54322 ssh2",
-                    "Jun  8 08:20:10 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54323 ssh2"
+                    'Jun  8 08:20:00 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54321 ssh2',
+                    'Jun  8 08:20:05 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54322 ssh2',
+                    'Jun  8 08:20:10 ubuntu sshd[4567]: Failed password for root from 192.168.1.100 port 54323 ssh2'
                 )}
             }}
             www = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
@@ -76,9 +76,7 @@ function Get-LearningContent-ubuntu {
                 }}
             }}
         }}
-        usr = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-            bin = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{}}
-        }}
+        usr = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{} }
         tmp = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             temp_data = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @("temp data file")}
         }}

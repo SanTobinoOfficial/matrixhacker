@@ -170,8 +170,8 @@ Register-LCommand "cd" {
     $path = if ($args.Count -gt 0) { $args[0] } else { "~" }
     $target = Resolve-LPath $path
     $item = Get-LItem $target
-    if (-not $item) { return @("cd: $path: No such file or directory") }
-    if ($item.Type -ne "dir") { return @("cd: $path: Not a directory") }
+    if (-not $item) { return @("cd: ${path}: No such file or directory") }
+    if ($item.Type -ne "dir") { return @("cd: ${path}: Not a directory") }
     $script:learningCwd = $target
     return @()
 }
@@ -189,8 +189,8 @@ Register-LCommand "cat" {
     foreach ($f in $args) {
         $target = Resolve-LPath $f
         $item = Get-LItem $target
-        if (-not $item) { $output += "cat: $f: No such file or directory"; continue }
-        if ($item.Type -eq "dir") { $output += "cat: $f: Is a directory"; continue }
+        if (-not $item) { $output += "cat: ${f}: No such file or directory"; continue }
+        if ($item.Type -eq "dir") { $output += "cat: ${f}: Is a directory"; continue }
         if ($item.Content) { $output += $item.Content }
     }
     return $output
@@ -211,8 +211,8 @@ Register-LCommand "head" {
     $output = @()
     foreach ($f in $files) {
         $target = Resolve-LPath $f; $item = Get-LItem $target
-        if (-not $item) { $output += "head: $f: No such file or directory"; continue }
-        if ($item.Type -eq "dir") { $output += "head: $f: Is a directory"; continue }
+        if (-not $item) { $output += "head: ${f}: No such file or directory"; continue }
+        if ($item.Type -eq "dir") { $output += "head: ${f}: Is a directory"; continue }
         if ($item.Content) {
             $lines = $item.Content
             if ($files.Count -gt 1) { $output += "==> $f <==" }
@@ -237,8 +237,8 @@ Register-LCommand "tail" {
     $output = @()
     foreach ($f in $files) {
         $target = Resolve-LPath $f; $item = Get-LItem $target
-        if (-not $item) { $output += "tail: $f: No such file or directory"; continue }
-        if ($item.Type -eq "dir") { $output += "tail: $f: Is a directory"; continue }
+        if (-not $item) { $output += "tail: ${f}: No such file or directory"; continue }
+        if ($item.Type -eq "dir") { $output += "tail: ${f}: Is a directory"; continue }
         if ($item.Content) {
             $lines = $item.Content
             if ($files.Count -gt 1) { $output += "==> $f <==" }
@@ -549,7 +549,7 @@ Register-LCommand "sudo" {
     $script:learningSudo = $true
     $handler = $script:learningCommands[$cmd]
     if ($handler) { return & $handler $cmdArgs }
-    return @("sudo: $cmd: command not found")
+    return @("sudo: ${cmd}: command not found")
 }
 
 # -- systemctl --
@@ -691,7 +691,7 @@ Register-LCommand "wc" {
     $results = @()
     foreach ($f in $files) {
         $target = Resolve-LPath $f; $item = Get-LItem $target
-        if (-not $item) { $results += "wc: $f: No such file or directory"; continue }
+        if (-not $item) { $results += "wc: ${f}: No such file or directory"; continue }
         $content = $item.Content -join "`n"
         $l = $item.Content.Count; $w = ($content -split "\s+" | Where-Object { $_ }).Count; $c = $content.Length
         $totalL += $l; $totalW += $w; $totalC += $c
@@ -835,7 +835,7 @@ function Invoke-LearningCommand {
             foreach ($cp in $commonPaths) { if (Get-LItem $cp) { $found = $true; break } }
             if ($found) { $output = @(); continue }
 
-            if ($first) { $output = @("$cmdName: command not found") }
+            if ($first) { $output = @("${cmdName}: command not found") }
             else { $output = @() }
             continue
         }

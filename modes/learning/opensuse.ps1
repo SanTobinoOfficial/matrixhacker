@@ -5,7 +5,7 @@ function Get-LearningContent-opensuse {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 readme_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "openSUSE Tumbleweed — rolling release",
+                    'openSUSE Tumbleweed - rolling release',
                     "Zarzadzanie pakietami: zypper",
                     "Konfiguracja: YaST (Yast Another Setup Tool)",
                     "Aktualizacja: sudo zypper update"

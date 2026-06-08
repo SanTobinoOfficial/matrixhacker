@@ -20,10 +20,10 @@ $learningSystems = @(
 )
 
 $learningDifficulties = @(
-    @{ Id = "beginner"; Name = "Poczatkujacy"; Tasks = 5; Desc = "Podstawy terminala — ls, cd, cat, mkdir, touch" }
-    @{ Id = "intermediate"; Name = "Sredniozaawansowany"; Tasks = 5; Desc = "Zarzadzanie systemem — grep, ps, chmod, tar, ping" }
-    @{ Id = "advanced"; Name = "Zaawansowany"; Tasks = 5; Desc = "Administracja — systemctl, find -exec, awk, sed, cron" }
-    @{ Id = "expert"; Name = "Ekspert"; Tasks = 5; Desc = "Ekspert systemowy — strace, tcpdump, selinux, perf" }
+    @{ Id = "beginner"; Name = "Poczatkujacy"; Tasks = 5; Desc = "Podstawy terminala - ls, cd, cat, mkdir, touch" }
+    @{ Id = "intermediate"; Name = "Sredniozaawansowany"; Tasks = 5; Desc = "Zarzadzanie systemem - grep, ps, chmod, tar, ping" }
+    @{ Id = "advanced"; Name = "Zaawansowany"; Tasks = 5; Desc = "Administracja - systemctl, find -exec, awk, sed, cron" }
+    @{ Id = "expert"; Name = "Ekspert"; Tasks = 5; Desc = "Ekspert systemowy - strace, tcpdump, selinux, perf" }
 )
 
 function Build-LEARNINGCOMMANDS {
@@ -35,7 +35,7 @@ function Show-LearningSelector {
     $Host.UI.RawUI.BackgroundColor = "Black"
     Write-Host ""
     Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     TRYB NAUKI — Wybor systemu" -ForegroundColor Green
+    Write-Host "     TRYB NAUKI - Wybor systemu" -ForegroundColor Green
     Write-Host "  ========================================" -ForegroundColor Cyan
     Write-Host ""
     $i = 1
@@ -64,12 +64,12 @@ function Show-DifficultySelector {
     Clear-Host
     Write-Host ""
     Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     $($SystemInfo.Name) — Poziom trudnosci" -ForegroundColor Green
+    Write-Host "     $($SystemInfo.Name) - Poziom trudnosci" -ForegroundColor Green
     Write-Host "  ========================================" -ForegroundColor Cyan
     Write-Host ""
     $i = 1
     foreach ($diff in $learningDifficulties) {
-        Write-Host "  [$i] $($diff.Name) — $($diff.Desc)" -ForegroundColor Yellow
+        Write-Host "  [$i] $($diff.Name) - $($diff.Desc)" -ForegroundColor Yellow
         $i++
     }
     Write-Host ""

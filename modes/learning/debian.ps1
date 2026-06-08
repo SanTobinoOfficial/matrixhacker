@@ -5,7 +5,7 @@ function Get-LearningContent-debian {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 readme = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "Debian 12 (Bookworm) — witaj!",
+                    'Debian 12 (Bookworm) - witaj!',
                     "Debian slynie ze stabilnosci.",
                     "Aktualna wersja: 12.5", "Kod: Bookworm"
                 )}

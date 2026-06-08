@@ -6,7 +6,7 @@ function Get-LearningContent-macos {
             student = @{ Type = "dir"; Owner = "student"; Group = "staff"; Children = @{
                 Desktop = @{ Type = "dir"; Owner = "student"; Group = "staff"; Children = @{
                     readme_txt = @{ Type = "file"; Owner = "student"; Group = "staff"; Content = @(
-                        "macOS Sequoia — witaj w terminalu!",
+                        'macOS Sequoia - witaj w terminalu!',
                         "Shell: zsh (Z shell)",
                         "Zarzadzanie pakietami: brew (Homebrew)",
                         "Roznica: ls -G (kolorowe wyjscie), brak --color"

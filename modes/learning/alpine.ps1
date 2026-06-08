@@ -5,10 +5,10 @@ function Get-LearningContent-alpine {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 about_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "Alpine Linux 3.20 — lekki i bezpieczny",
-                    "Zarzadzanie pakietami: apk",
-                    "Init system: OpenRC (nie systemd!)",
-                    "Menedzer plikow: busybox"
+                    'Alpine Linux 3.20 - lekki i bezpieczny',
+                    'Zarzadzanie pakietami: apk',
+                    'Init system: OpenRC (nie systemd!)',
+                    'Menedzer plikow: busybox'
                 )}
                 configs = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                     network_cfg = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
@@ -32,7 +32,7 @@ function Get-LearningContent-alpine {
                 "::wait:/sbin/openrc boot", "::ctrlaltdel:/sbin/reboot"
             )}
         }}
-        var = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
+        'var' = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             log = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
                 messages = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
                     "Jun  8 07:00:00 alpine-box kernel: Linux version 6.7.0-0.alpine",
@@ -86,7 +86,7 @@ function Get-LearningContent-alpine {
 
     $expertTasks = @(
         @{ Id = 16; Title = "Zapisz logi do pliku"; Difficulty = "expert"; ExpectedCommand = "cat /var/log/messages > ~/system_log.txt"
-            Description = @("Zapisz caly log systemowy do pliku w katalogu domowym."); Hint = "Uzyj: cat /var/log/messages > ~/system_log.txt" }
+            Description = @("Zapisz caly log systemowy do pliku w katalogu domowym."); Hint = 'Uzyj: cat /var/log/messages > ~/system_log.txt' }
         @{ Id = 17; Title = "Polacz ps z grep"; Difficulty = "expert"; ExpectedCommand = "ps | grep sshd"
             Description = @("Uzyj pipe aby znalezc proces sshd."); Hint = "Uzyj: ps | grep sshd" }
         @{ Id = 18; Title = "Sprawdz pamiec w MB"; Difficulty = "expert"; ExpectedCommand = "free -m"

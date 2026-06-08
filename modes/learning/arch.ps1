@@ -5,17 +5,17 @@ function Get-LearningContent-arch {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 info_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "Arch Linux — rolling release. Witaj!",
+                    'Arch Linux - rolling release. Witaj!',
                     "Zarzadzanie pakietami: pacman",
                     "Aktualizacja: sudo pacman -Syu",
-                    "Instalacja: sudo pacman -S <pakiet>"
+                    'Instalacja: sudo pacman -S <pakiet>'
                 )}
                 build = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                     PKGBUILD = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
                         "# Maintainer: Student Student <student@archlinux.org>",
                         "pkgname=hello-world", "pkgver=1.0", "pkgrel=1",
                         "arch=('x86_64')", "license=('GPL')",
-                        "package() { mkdir -p $pkgdir/usr/bin; echo 'hello' > $pkgdir/usr/bin/hello; }"
+                        "package() { mkdir -p `$pkgdir/usr/bin; echo 'hello' > `$pkgdir/usr/bin/hello; }"
                     )}
                 }}
             }}

@@ -5,7 +5,7 @@ function Get-LearningContent-kali {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 readme_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "Kali Linux 2026.1 — pentesting distribution",
+                    'Kali Linux 2026.1 - pentesting distribution',
                     "Narzedzia: nmap, metasploit, burpsuite, john, hashcat",
                     "Dokumentacja: kali.org/docs"
                 )}

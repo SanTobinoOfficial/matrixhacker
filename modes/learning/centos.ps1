@@ -5,7 +5,7 @@ function Get-LearningContent-centos {
         home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
             student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
                 welcome_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    "Rocky Linux 9.4 — enterprise-grade Linux",
+                    'Rocky Linux 9.4 - enterprise-grade Linux',
                     "Zastapil on CentOS 9 jako stabilna wersja RHEL.",
                     "Zarzadzanie pakietami: dnf"
                 )}
