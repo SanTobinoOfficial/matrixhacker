@@ -49,7 +49,7 @@ function Start-Mode {
     $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
     if (-not $func) { Write-Host "Error: mode function $funcName not found" -ForegroundColor Red; return }
-    Start-TerminalSession -CommandBuilder ([scriptblock]::Create("`$function:$funcName")) -Theme $theme -ModeName $mode.Name
+    Start-TerminalSession -CommandBuilder ([scriptblock]::Create($funcName)) -Theme $theme -ModeName $mode.Name
 }
 
 function Show-GuiLauncher {
@@ -150,7 +150,7 @@ function Show-CliLauncher {
         $funcName = "Build-$($mode.Id.ToUpper())COMMANDS"
         $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
         if (-not $func) { Write-Host "Error: mode function not found: $funcName" -ForegroundColor Red; return }
-        Start-TerminalSession -CommandBuilder ([scriptblock]::Create("`$function:$funcName")) -Theme $theme -ModeName $mode.Name
+        Start-TerminalSession -CommandBuilder ([scriptblock]::Create($funcName)) -Theme $theme -ModeName $mode.Name
     } else {
         Write-Host "Invalid choice." -ForegroundColor Red
         Start-Sleep -Milliseconds 500
