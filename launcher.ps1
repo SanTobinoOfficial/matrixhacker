@@ -35,37 +35,22 @@ $modes = @(
     @{ Id = "screensaver"; Name = "Matrix Screensaver"; Desc = "Infinite Matrix rain" }
 )
 
-if ($Help) {
-    Write-Host "Ultra Matrix Terminal Launcher" -ForegroundColor Cyan
-    Write-Host "USAGE: .\launcher.ps1 [options]" -ForegroundColor Gray
-    Write-Host "  -CLI           Launch in CLI mode (no GUI)" -ForegroundColor Gray
-    Write-Host "  -Mode <id>     Launch mode directly by ID" -ForegroundColor Gray
-    Write-Host "  -Help          Show this help" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Available modes:" -ForegroundColor Yellow
-    foreach ($m in $modes) { Write-Host "  $($m.Id.PadRight(14)) $($m.Name)" -ForegroundColor Green }
-    return
-}
-
 $modeMap = @{}
 foreach ($m in $modes) { $modeMap[$m.Id] = $m }
 
-if ($Mode) {
-    if (-not $modeMap.ContainsKey($Mode)) { Write-Host "Unknown mode: $Mode" -ForegroundColor Red; return }
-    $info = $modeMap[$Mode]
-    $theme = Get-Theme $Mode
-    $funcName = "Build-$($Mode.ToUpper())COMMANDS"
+# =====================================================================
+# FUNCTIONS
+# =====================================================================
+
+function Start-Mode {
+    param([string]$Id)
+    $mode = $modeMap[$Id]
+    $theme = Get-Theme $Id
+    $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
     if (-not $func) { Write-Host "Error: mode function $funcName not found" -ForegroundColor Red; return }
-    Start-TerminalSession -CommandBuilder ([scriptblock]::Create("`$function:$funcName")) -Theme $theme -ModeName $info.Name
-    return
+    Start-TerminalSession -CommandBuilder ([scriptblock]::Create("`$function:$funcName")) -Theme $theme -ModeName $mode.Name
 }
-
-if (-not $CLI) {
-    try { Show-GuiLauncher $modes; return } catch { }
-}
-
-Show-CliLauncher $modes
 
 function Show-GuiLauncher {
     param($modes)
@@ -124,7 +109,7 @@ function Show-GuiLauncher {
     }
 
     $ver = New-Object System.Windows.Forms.Label
-    $ver.Text = "v2.0 | Escape to exit any session | github.com/ultra-matrix-terminal"
+    $ver.Text = "v2.0 | Escape to exit any session | github.com/SanTobinoOfficial/matrixhacker"
     $ver.Font = New-Object Drawing.Font("Consolas", 8)
     $ver.ForeColor = [Drawing.Color]::DarkGray
     $ver.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
@@ -134,16 +119,6 @@ function Show-GuiLauncher {
     $form.Controls.Add($ver)
 
     $form.ShowDialog() | Out-Null
-}
-
-function Start-Mode {
-    param([string]$Id)
-    $mode = $modeMap[$Id]
-    $theme = Get-Theme $Id
-    $funcName = "Build-$($Id.ToUpper())COMMANDS"
-    $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
-    if (-not $func) { [System.Windows.Forms.MessageBox]::Show("Mode function not found: $funcName", "Error") | Out-Null; return }
-    Start-TerminalSession -CommandBuilder ([scriptblock]::Create("`$function:$funcName")) -Theme $theme -ModeName $mode.Name
 }
 
 function Show-CliLauncher {
@@ -182,3 +157,31 @@ function Show-CliLauncher {
         Show-CliLauncher $modes
     }
 }
+
+# =====================================================================
+# MAIN EXECUTION
+# =====================================================================
+
+if ($Help) {
+    Write-Host "Ultra Matrix Terminal Launcher" -ForegroundColor Cyan
+    Write-Host "USAGE: .\launcher.ps1 [options]" -ForegroundColor Gray
+    Write-Host "  -CLI           Launch in CLI mode (no GUI)" -ForegroundColor Gray
+    Write-Host "  -Mode <id>     Launch mode directly by ID" -ForegroundColor Gray
+    Write-Host "  -Help          Show this help" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "Available modes:" -ForegroundColor Yellow
+    foreach ($m in $modes) { Write-Host "  $($m.Id.PadRight(14)) $($m.Name)" -ForegroundColor Green }
+    return
+}
+
+if ($Mode) {
+    if (-not $modeMap.ContainsKey($Mode)) { Write-Host "Unknown mode: $Mode" -ForegroundColor Red; return }
+    Start-Mode $Mode
+    return
+}
+
+if (-not $CLI) {
+    try { Show-GuiLauncher $modes; return } catch { }
+}
+
+Show-CliLauncher $modes
