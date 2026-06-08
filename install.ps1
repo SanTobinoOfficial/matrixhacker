@@ -3,8 +3,8 @@
 # Run: irm https://raw.githubusercontent.com/<user>/ultra-matrix-terminal/main/install.ps1 | iex
 # =====================================================================
 
-$repoOwner = "ultra-matrix-terminal"
-$repoName = "ultra-matrix-terminal"
+$repoOwner = "SanTobinoOfficial"
+$repoName = "matrixhacker"
 $branch = "main"
 $installDir = "$env:LOCALAPPDATA\UltraMatrixTerminal"
 
@@ -35,15 +35,10 @@ try {
     Write-Host "[*] Downloading from $zipUrl ..." -ForegroundColor Gray
     Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath -UseBasicParsing -ErrorAction Stop
 } catch {
-    Write-Host "[!] Download failed. Falling back to local copy..." -ForegroundColor Yellow
-    $scriptPath = Split-Path $MyInvocation.MyCommand.Path -Parent
-    if ($scriptPath -and (Test-Path $scriptPath)) {
-        Copy-Item "$scriptPath\*" $installDir -Recurse -Force
-        Write-Host "[+] Local copy installed." -ForegroundColor Green
-    } else {
-        Write-Host "[!] Installation failed. No internet and no local copy." -ForegroundColor Red
-        exit 1
-    }
+    Write-Host "[!] Download failed: $_" -ForegroundColor Red
+    Write-Host "[!] Check your internet connection and try again." -ForegroundColor Yellow
+    Write-Host "    URL attempted: $zipUrl" -ForegroundColor Yellow
+    exit 1
 }
 
 if (Test-Path $zipPath) {
