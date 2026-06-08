@@ -60,6 +60,13 @@ if (Test-Path $zipPath) {
     if ($extracted) {
         Copy-Item "$tempExtract/$repoName-$branch/*" $installDir -Recurse -Force
         Remove-Item $tempExtract -Recurse -Force
+    } else {
+        Write-Host "[!] Extraction path mismatch. Trying fallback..." -ForegroundColor Yellow
+        $topDir = Get-ChildItem $tempExtract -Directory | Select-Object -First 1
+        if ($topDir) {
+            Copy-Item "$($topDir.FullName)/*" $installDir -Recurse -Force
+            Remove-Item $tempExtract -Recurse -Force
+        }
     }
     Remove-Item $zipPath -Force
 }
@@ -105,6 +112,6 @@ Write-Host "  Direct:      $launcherPath -Mode realistic" -ForegroundColor Yello
 Write-Host "  Help:        $launcherPath -Help" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  Press any key to launch now..." -ForegroundColor Gray
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+$null = $Host.UI.RawUI.ReadKey([System.Management.Automation.Host.ReadKeyOptions]::NoEcho -bor [System.Management.Automation.Host.ReadKeyOptions]::IncludeKeyDown)
 
 & $launcherPath

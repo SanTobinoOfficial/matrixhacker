@@ -10,7 +10,7 @@ function Read-ConsoleKey {
     } catch {
         try {
             if (-not $Host.UI.RawUI.KeyAvailable) { return $null }
-            $k = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            $k = $Host.UI.RawUI.ReadKey([System.Management.Automation.Host.ReadKeyOptions]::NoEcho -bor [System.Management.Automation.Host.ReadKeyOptions]::IncludeKeyDown)
             $vc = $k.VirtualKeyCode
             if ($vc -eq 27) { return @{ Key = "Escape"; KeyChar = "`0" } }
             if ($vc -eq 13) { return @{ Key = "Enter"; KeyChar = "`r" } }
@@ -34,7 +34,7 @@ function Set-CursorPosition {
     try { $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($X, $Y) } catch { }
 }
 
-function Rand { param($a,$b) Get-Random -Minimum $a -Maximum $b }
+function Rand { param($a,$b) if ($a -ge $b) { $t=$a;$a=$b;$b=$t }; Get-Random -Minimum $a -Maximum $b }
 
 function RandIP { "$(Rand 10 255).$(Rand 10 255).$(Rand 10 255).$(Rand 10 255)" }
 
@@ -55,7 +55,7 @@ function Cprog($c, $o) { @{ Command = $c; Output = $o; Progress = $true } }
 function Get-DynamicPrompt {
     param([string]$PromptBase, [string]$SimDir, [bool]$IsRoot)
     $dir = if ($SimDir -eq "~") { "~" } else { $SimDir }
-    $userHost = $PromptBase -replace '[:~\$#>].*', ''
+    $userHost = $PromptBase -replace '[:~$#>].*', ''
     $suffix = if ($IsRoot) { '#' } else { '$' }
     return "$userHost`:$dir$suffix "
 }

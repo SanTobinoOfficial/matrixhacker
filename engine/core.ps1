@@ -6,7 +6,7 @@
 # MATRIX-RAIN v3 — multi-style, overlay typing, batch rendering
 # =====================================================================
 function Matrix-Rain {
-    param([int]$DurationSeconds = 20, [switch]$Infinite, [hashtable]$Theme)
+    param([int]$DurationSeconds = 20, [switch]$Infinite, [ValidateNotNull()][hashtable]$Theme)
 
     $width = $Host.UI.RawUI.WindowSize.Width
     $height = $Host.UI.RawUI.WindowSize.Height
@@ -178,8 +178,8 @@ function Show-Output {
             while ($pagerWait) {
                 $pk = Read-ConsoleKey
                 if ($pk) {
-                    if ($pk.Key -eq "Escape") { return }
-                    $pagerWait = $false
+                    if ($pk.Key -eq "Escape" -or $pk.Key -eq "Q") { return }
+                    if ($pk.Key -eq "Spacebar" -or $pk.Key -eq "Enter") { $pagerWait = $false }
                 }
                 Start-Sleep -Milliseconds 30
             }
@@ -215,7 +215,7 @@ function Show-Output {
 function Invoke-PressToReveal {
     param([string]$Text, [string]$PromptColor)
 
-    $revealed = 0; $escaped = $false; $autoRemaining = $false
+    $revealed = 0; $autoRemaining = $false
 
     while ($revealed -lt $Text.Length) {
         $k = Read-ConsoleKey
@@ -232,7 +232,7 @@ function Invoke-PressToReveal {
             }
             if ($k.KeyChar -ne "`0" -and $k.Key -ne "Tab" -and $k.Key -ne "ShiftKey" -and $k.Key -ne "ControlKey") {
                 if ($k.Key -eq "UpArrow") {
-                    if ($script:commandHistory.Count -gt 0) {
+                    if ($script:commandHistory -and $script:commandHistory.Count -gt 0) {
                         $recalled = $script:commandHistory[-1]
                         for ($j = 0; $j -lt $revealed; $j++) {
                             $pos = Get-CursorPosition
@@ -241,14 +241,14 @@ function Invoke-PressToReveal {
                             Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
                         }
                         $revealed = 0
-                        for ($j = 0; $j -lt [Math]::Min($recalled.Length, $text.Length); $j++) {
+                        for ($j = 0; $j -lt [Math]::Min($recalled.Length, $Text.Length); $j++) {
                             Write-Host -NoNewline $recalled[$j] -ForegroundColor White
                             $revealed++
                         }
                     }
                     continue
                 }
-                Write-Host -NoNewline $text[$revealed] -ForegroundColor White
+                Write-Host -NoNewline $Text[$revealed] -ForegroundColor White
                 $revealed++
             }
         }
@@ -256,7 +256,7 @@ function Invoke-PressToReveal {
     }
 
     if ($autoRemaining) {
-        if (Type-Command $text) { return $true }
+        if (Type-Command $Text) { return $true }
     }
     return $false
 }
@@ -267,7 +267,7 @@ function Invoke-PressToReveal {
 function Start-TerminalSession {
     param(
         [scriptblock]$CommandBuilder,
-        [hashtable]$Theme,
+        [ValidateNotNull()][hashtable]$Theme,
         [string]$ModeName,
         [string]$TargetHost = "server",
         [string]$TargetDomain = "local",
@@ -337,7 +337,7 @@ function Start-TerminalSession {
         Write-Host "Last login: $(RandDate) from $(RandIP)" -ForegroundColor DarkGray
         Start-Sleep -Milliseconds 200
         if (Rand 0 2) {
-            Write-Host "System: $(Rand 100 500) procs | load: $(Rand 0 4).$(Rand 00 99) $(Rand 0 3).$(Rand 00 99) $(Rand 0 2).$(Rand 00 99) | mem: $((Get-Random -Min 20 -Max 90))%" -ForegroundColor DarkGray
+            Write-Host "System: $(Rand 100 500) procs | load: $(Rand 0 4).$(Rand 00 99) $(Rand 0 3).$(Rand 00 99) $(Rand 0 2).$(Rand 00 99) | mem: $((Get-Random -Minimum 20 -Maximum 90))%" -ForegroundColor DarkGray
             Start-Sleep -Milliseconds 250
         }
         Write-Host ""

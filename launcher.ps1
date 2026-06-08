@@ -37,6 +37,7 @@ foreach ($m in $modes) { $modeMap[$m.Id] = $m }
 function Start-Mode {
     param([string]$Id)
     $mode = $modeMap[$Id]
+    if (-not $mode) { Write-Host "Error: unknown mode '$Id'" -ForegroundColor Red; return }
     $theme = Get-Theme $Id
     $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
@@ -115,6 +116,7 @@ function Show-GuiLauncher {
 
 function Show-CliLauncher {
     param($modes)
+    if ($modes.Count -eq 0) { Write-Host "No modes available." -ForegroundColor Red; return }
     $platform = Get-Platform
     $Host.UI.RawUI.BackgroundColor = "Black"
     Clear-Host

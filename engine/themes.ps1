@@ -255,7 +255,7 @@ $script:Themes = @{
         errorColor = "Green"
         briefColor = "DarkGreen"
         chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&<>*+="
-        overlayMsgs = @("")
+        overlayMsgs = @()
     }
 }
 
