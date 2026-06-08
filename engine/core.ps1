@@ -160,7 +160,7 @@ function Type-Command {
 function Show-Output {
     param([string[]]$Lines, [hashtable]$Theme, [switch]$NoPager)
 
-    $lineCount = $Lines.Length
+    $lineCount = if ($Lines) { $Lines.Length } else { 0 }
     $termHeight = $Host.UI.RawUI.WindowSize.Height
     $linesPrinted = 0
     $accent = if ($Theme) { $Theme.accent } else { "Cyan" }
@@ -340,7 +340,7 @@ function Start-TerminalSession {
         Start-Sleep -Milliseconds 150
         Write-Host "Last login: $(RandDate) from $(RandIP)" -ForegroundColor DarkGray
         Start-Sleep -Milliseconds 200
-        if (Rand 0 1) {
+        if (Rand 0 2) {
             Write-Host "System: $(Rand 100 500) procs | load: $(Rand 0 4).$(Rand 00 99) $(Rand 0 3).$(Rand 00 99) $(Rand 0 2).$(Rand 00 99) | mem: $((Get-Random -Min 20 -Max 90))%" -ForegroundColor DarkGray
             Start-Sleep -Milliseconds 250
         }

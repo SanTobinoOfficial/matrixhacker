@@ -12,7 +12,7 @@ function RandDate {
 }
 
 function RandHex($len=8) {
-    -join ((1..$len) | ForEach-Object { '{0:x}' -f (Rand 0 15) })
+    -join ((1..$len) | ForEach-Object { '{0:x}' -f (Rand 0 16) })
 }
 
 function C($c, $o) { @{ Command = $c; Output = $o } }

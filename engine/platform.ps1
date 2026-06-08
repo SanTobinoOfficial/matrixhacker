@@ -1,8 +1,12 @@
 function Get-Platform {
     if ($IsWindows) { return "Windows" }
-    elseif ($IsMacOS) { return "macOS" }
-    elseif ($IsLinux) { return "Linux" }
-    else { return "Unix" }
+    if ($IsMacOS) { return "macOS" }
+    if ($IsLinux) { return "Linux" }
+    if ($env:OS -match "Windows") { return "Windows" }
+    $p = [System.Environment]::OSVersion.Platform
+    if ($p -eq [System.PlatformID]::Unix) { return "Linux" }
+    if ($p -eq 6) { return "macOS" }
+    return "Unix"
 }
 
 function Get-InstallDir {
@@ -96,7 +100,7 @@ function New-WrapperScript {
         $path = "$InstallDir\ultra-matrix.cmd"
         @"
 @echo off
-powershell -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\UltraMatrixTerminal\launcher.ps1" %*
+powershell -ExecutionPolicy Bypass -File "$InstallDir\launcher.ps1" %*
 "@ | Out-File $path -Encoding ascii
     } else {
         $path = "$InstallDir/ultra-matrix"
