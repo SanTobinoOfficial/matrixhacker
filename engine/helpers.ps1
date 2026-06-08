@@ -2,6 +2,38 @@
 # HELPERS — shared utility functions for all modes
 # =====================================================================
 
+# Cross-platform console key reader (safe in ISE, SSH, remote)
+function Read-ConsoleKey {
+    try {
+        if (-not [Console]::KeyAvailable) { return $null }
+        return [Console]::ReadKey($true)
+    } catch {
+        try {
+            if (-not $Host.UI.RawUI.KeyAvailable) { return $null }
+            $k = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            $vc = $k.VirtualKeyCode
+            if ($vc -eq 27) { return @{ Key = "Escape"; KeyChar = "`0" } }
+            if ($vc -eq 13) { return @{ Key = "Enter"; KeyChar = "`r" } }
+            if ($vc -eq 8)  { return @{ Key = "Backspace"; KeyChar = "`b" } }
+            if ($vc -eq 38) { return @{ Key = "UpArrow"; KeyChar = "`0" } }
+            if ($vc -eq 9)  { return @{ Key = "Tab"; KeyChar = "`t" } }
+            if ($vc -eq 16 -or $vc -eq 17) { return @{ Key = "Modifier"; KeyChar = "`0" } }
+            return @{ Key = $k.Character.ToString().ToUpper(); KeyChar = $k.Character }
+        } catch { return $null }
+    }
+}
+
+# Safe cursor position getter (fallback to origin)
+function Get-CursorPosition {
+    try { return $Host.UI.RawUI.CursorPosition } catch { return @{ X = 0; Y = 0 } }
+}
+
+# Safe cursor position setter
+function Set-CursorPosition {
+    param([int]$X, [int]$Y)
+    try { $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($X, $Y) } catch { }
+}
+
 function Rand { param($a,$b) Get-Random -Minimum $a -Maximum $b }
 
 function RandIP { "$(Rand 10 255).$(Rand 10 255).$(Rand 10 255).$(Rand 10 255)" }

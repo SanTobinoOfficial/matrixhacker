@@ -1,6 +1,6 @@
-﻿. "$PSScriptRoot\..\engine\themes.ps1"
-. "$PSScriptRoot\..\engine\helpers.ps1"
-. "$PSScriptRoot\..\engine\core.ps1"
+﻿. "$PSScriptRoot/../engine/themes.ps1"
+. "$PSScriptRoot/../engine/helpers.ps1"
+. "$PSScriptRoot/../engine/core.ps1"
 
 function Build-HOLLYWOODCOMMANDS {
     return @(

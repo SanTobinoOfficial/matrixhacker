@@ -6,12 +6,12 @@ param(
 
 $scriptPath = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocation.MyCommand.Path -Parent }
 
-. "$scriptPath\engine\themes.ps1"
-. "$scriptPath\engine\helpers.ps1"
-. "$scriptPath\engine\platform.ps1"
-. "$scriptPath\engine\core.ps1"
+. "$scriptPath/engine/themes.ps1"
+. "$scriptPath/engine/helpers.ps1"
+. "$scriptPath/engine/platform.ps1"
+. "$scriptPath/engine/core.ps1"
 
-Get-ChildItem "$scriptPath\modes" -Filter *.ps1 | ForEach-Object { . $_.FullName }
+Get-ChildItem "$scriptPath/modes" -Filter *.ps1 | ForEach-Object { . $_.FullName }
 
 $modes = @(
     @{ Id = "realistic"; Name = "Realistic Terminal"; Desc = "Authentic Linux terminal session" }

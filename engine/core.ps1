@@ -18,11 +18,11 @@ function Matrix-Rain {
 
     function Show-OverlayTyped {
         param([string]$Msg, [int]$X, [int]$Y, [string]$Color)
-        $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($X, $Y)
+        Set-CursorPosition -X $X -Y $Y
         for ($oi = 0; $oi -lt $Msg.Length; $oi++) {
             Write-Host -NoNewline $Msg[$oi] -ForegroundColor $Color
             Start-Sleep -Milliseconds (Get-Random -Minimum 20 -Maximum 60)
-            if ([Console]::KeyAvailable) { $k = [Console]::ReadKey($true); if ($k.Key -eq "Escape") { return $true } }
+            $k = Read-ConsoleKey; if ($k -and $k.Key -eq "Escape") { return $true }
         }
         return $false
     }
@@ -38,7 +38,7 @@ function Matrix-Rain {
 
     while ($true) {
         if (-not $Infinite -and ((Get-Date) - $startTime).TotalSeconds -gt $DurationSeconds) { break }
-        if ([Console]::KeyAvailable) { $k = [Console]::ReadKey($true); if ($k.Key -eq "Escape") { return } }
+        $k = Read-ConsoleKey; if ($k -and $k.Key -eq "Escape") { return }
 
         $overlayTimer++
         $overlayChance = if ($Infinite) { 50 } else { 80 }
@@ -95,7 +95,7 @@ function Matrix-Rain {
         foreach ($yi in ($dirtyByY.Keys | Sort-Object)) {
             foreach ($xi in ($dirtyByY[$yi] | Sort-Object -Unique)) {
                 $entry = $currentFrame["$xi,$yi"]
-                $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($xi, $yi)
+                Set-CursorPosition -X $xi -Y $yi
                 if ($entry) { Write-Host -NoNewline $entry.char -ForegroundColor $entry.color }
                 else { Write-Host -NoNewline " " -ForegroundColor Black }
             }
@@ -121,8 +121,8 @@ function Type-Command {
     if ($hasTypo) { $mistakeAt = Rand 3 ([Math]::Min($Text.Length - 2, 15)) }
 
     for ($i = 0; $i -lt $Text.Length; $i++) {
-        if ([Console]::KeyAvailable) {
-            $k = [Console]::ReadKey($true)
+        $k = Read-ConsoleKey
+        if ($k) {
             if ($k.Key -eq "Escape") { return $true }
             if ($k.Key -eq "Enter") { return $false }
         }
@@ -135,10 +135,10 @@ function Type-Command {
             Write-Host -NoNewline $wrong -ForegroundColor White
             Start-Sleep -Milliseconds 180
 
-            $pos = $Host.UI.RawUI.CursorPosition
-            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+            $pos = Get-CursorPosition
+            Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
             Write-Host -NoNewline " " -ForegroundColor White
-            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+            Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
             Start-Sleep -Milliseconds 120
         }
 
@@ -166,10 +166,8 @@ function Show-Output {
     $accent = if ($Theme) { $Theme.accent } else { "Cyan" }
 
     foreach ($line in $Lines) {
-        if ([Console]::KeyAvailable) {
-            $k = [Console]::ReadKey($true)
-            if ($k.Key -eq "Escape") { return }
-        }
+        $k = Read-ConsoleKey
+        if ($k -and $k.Key -eq "Escape") { return }
 
         # Pager for long output
         $linesPrinted++
@@ -178,17 +176,17 @@ function Show-Output {
             Write-Host "--More--($pct%)--" -NoNewline -ForegroundColor Gray
             $pagerWait = $true
             while ($pagerWait) {
-                if ([Console]::KeyAvailable) {
-                    $pk = [Console]::ReadKey($true)
+                $pk = Read-ConsoleKey
+                if ($pk) {
                     if ($pk.Key -eq "Escape") { return }
                     $pagerWait = $false
                 }
                 Start-Sleep -Milliseconds 30
             }
-            $pos = $Host.UI.RawUI.CursorPosition
-            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new(0, $pos.Y)
+            $pos = Get-CursorPosition
+            Set-CursorPosition -X 0 -Y $pos.Y
             Write-Host (" " * 30) -NoNewline
-            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new(0, $pos.Y)
+            Set-CursorPosition -X 0 -Y $pos.Y
             $linesPrinted = 0
         }
 
@@ -218,31 +216,29 @@ function Invoke-PressToReveal {
     param([string]$Text, [string]$PromptColor)
 
     $revealed = 0; $escaped = $false; $autoRemaining = $false
-    $promptLen = $Host.UI.RawUI.CursorPosition.X
 
     while ($revealed -lt $Text.Length) {
-        if ([Console]::KeyAvailable) {
-            $k = [Console]::ReadKey($true)
+        $k = Read-ConsoleKey
+        if ($k) {
             if ($k.Key -eq "Escape") { return $true }
             if ($k.Key -eq "Enter") { $autoRemaining = $true; break }
             if ($k.Key -eq "Backspace" -and $revealed -gt 0) {
                 $revealed--
-                $pos = $Host.UI.RawUI.CursorPosition
-                $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+                $pos = Get-CursorPosition
+                Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
                 Write-Host -NoNewline " "
-                $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+                Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
                 continue
             }
             if ($k.KeyChar -ne "`0" -and $k.Key -ne "Tab" -and $k.Key -ne "ShiftKey" -and $k.Key -ne "ControlKey") {
                 if ($k.Key -eq "UpArrow") {
-                    # Simulate history recall
                     if ($script:commandHistory.Count -gt 0) {
                         $recalled = $script:commandHistory[-1]
                         for ($j = 0; $j -lt $revealed; $j++) {
-                            $pos = $Host.UI.RawUI.CursorPosition
-                            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+                            $pos = Get-CursorPosition
+                            Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
                             Write-Host -NoNewline " "
-                            $Host.UI.RawUI.CursorPosition = [System.Management.Automation.Host.Coordinates]::new($pos.X - 1, $pos.Y)
+                            Set-CursorPosition -X ($pos.X - 1) -Y $pos.Y
                         }
                         $revealed = 0
                         for ($j = 0; $j -lt [Math]::Min($recalled.Length, $text.Length); $j++) {
@@ -295,7 +291,7 @@ function Start-TerminalSession {
     $Host.UI.RawUI.BackgroundColor = "Black"
     $Host.UI.RawUI.ForegroundColor = "Green"
     Clear-Host
-    [console]::CursorVisible = $false
+    try { [console]::CursorVisible = $false } catch { }
     try { $Host.UI.RawUI.WindowTitle = "$ModeName - $TargetHost.$TargetDomain" } catch { }
     $script:simDir = "~"
     $script:commandHistory = @()
@@ -320,7 +316,7 @@ function Start-TerminalSession {
         Start-Sleep -Milliseconds 1200
         Write-Host "Press ENTER to begin..." -ForegroundColor DarkGray
         while ($true) {
-            if ([Console]::KeyAvailable) { $k = [Console]::ReadKey($true); if ($k.Key -eq "Enter" -or $k.Key -eq "Escape") { break } }
+            $k = Read-ConsoleKey; if ($k -and ($k.Key -eq "Enter" -or $k.Key -eq "Escape")) { break }
             Start-Sleep -Milliseconds 50
         }
         Clear-Host
@@ -424,5 +420,5 @@ function Start-TerminalSession {
 
     Matrix-Rain -Infinite -Theme $Theme
     Start-Sleep -Milliseconds 500
-    [console]::CursorVisible = $true
+    try { [console]::CursorVisible = $true } catch { }
 }
