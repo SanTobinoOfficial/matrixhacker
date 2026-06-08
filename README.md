@@ -1,6 +1,6 @@
 # Ultra Matrix Terminal
 
-15 cinematic terminal simulation modes for Windows, Linux, and macOS — realistic SSH sessions, CTF challenges, Hollywood hacking, cyberpunk netrunning, and more. No external dependencies, pure PowerShell 5.1+ / PowerShell Core 7+.
+15 cinematic terminal simulation modes + interactive learning platform for Windows, Linux, and macOS — realistic SSH sessions, CTF challenges, Hollywood hacking, cyberpunk netrunning, and more. No external dependencies, pure PowerShell 5.1+ / PowerShell Core 7+.
 
 ## One-Liner Install
 
@@ -36,6 +36,7 @@ irm https://raw.githubusercontent.com/SanTobinoOfficial/matrixhacker/main/instal
 | 13 | Dark Web | Navigate the darknet |
 | 14 | CTF Challenge | Find the hidden flag |
 | 15 | Matrix Screensaver | Infinite Matrix rain |
+| **16** | **Learning Mode** | **Interactive shell simulator — learn Linux, Windows, Cisco, macOS in a virtual sandbox** |
 
 ## Commands per Mode
 
@@ -56,6 +57,7 @@ irm https://raw.githubusercontent.com/SanTobinoOfficial/matrixhacker/main/instal
 | darkweb | `torsocks curl http://darknet`, `ping -c 3 10.0.0.3`, `ssh anonymous@10.0.0.3`, `ls -la /darknet/`, `cat /darknet/README`, `nmap -sS darknet`, `curl -s http://darknet/market`, `dd if=/dev/urandom of=crypto_key.bin bs=32 count=1`, `gpg --symmetric --cipher AES256 data.bin`, `curl http://darknet/upload -F file=@data.bin.gpg`, `cat /var/log/tor.log`, `python3 -c "import hashlib; print(hashlib.sha256(b'blockchain').hexdigest())"`, `kill -9 31337`, `exit` |
 | ctf_mode | `whoami`, `ls -la`, `cat README`, `nmap -p- 10.0.0.1`, `gobuster dir -u http://10.0.0.1 -w /usr/share/wordlists/common.txt`, `curl -s http://10.0.0.1/robots.txt`, `cat /home/ctf/.bash_history`, `find / -name "flag*" 2>/dev/null`, `cat /root/flag.txt`, `ssh ctf-player@10.0.0.1`, `python3 -c 'import base64; print(base64.b64decode("Q1RGe0" + "xhYm9" + "yYXRvcnl" + "fRmxhZ30=").decode())'`, `export FLAG=CTF{...}`, `echo $FLAG`, `cat /etc/ctf/challenge.conf` |
 | screensaver | *(no commands — infinite Matrix rain with overlay messages)* |
+| learning | Free-form shell simulation — 11 systems, 4 difficulty levels, 20 tasks each. Custom `.hint`, `.skip`, `.check`, `.status` commands. Pipe/redirect supported. Full virtual filesystem per system: Ubuntu, Debian, CentOS, Arch, Kali, Alpine, openSUSE, Windows 11, Windows Server, Cisco IOS, macOS |
 
 ## Features
 
@@ -72,6 +74,7 @@ irm https://raw.githubusercontent.com/SanTobinoOfficial/matrixhacker/main/instal
 - **Session Timeout** — auto-exit after ~5 minutes per mode
 - **Escape to Exit** — press Escape at any time to quit
 - **Cross-Platform** — Windows (PS 5.1+), Linux, macOS (PowerShell Core 7+)
+- **Learning Mode** — virtual filesystem sandbox with 11 operating systems, 4 difficulty levels, 220 tasks, free-form input with history/backspace/pipe/redirect, `.hint`/`.skip`/`.check`/`.status` commands
 
 ## Project Structure
 
@@ -83,8 +86,10 @@ ultra-matrix-terminal/
 │   ├── core.ps1        # Matrix-Rain, Type-Command, Show-Output, session loop
 │   ├── helpers.ps1     # Utility functions (Rand, RandIP, C, Get-DynamicPrompt)
 │   ├── platform.ps1    # OS detection, install dirs, shortcuts, PATH
-│   └── themes.ps1      # 15 theme definitions (colors, char sets, overlay messages)
+│   ├── themes.ps1      # 16 theme definitions (colors, char sets, overlay messages)
+│   └── learning_engine.ps1 # Virtual FS, 40+ command handlers, pipe/redirect, task engine
 ├── modes/
+│   ├── learning.ps1    # Mode 16: Learning Mode selector + entry point
 │   ├── realistic.ps1   # Mode 1: Realistic Terminal
 │   ├── hollywood.ps1   # Mode 2: Hollywood Hacker
 │   ├── cyberpunk.ps1   # Mode 3: Cyberpunk 2077
@@ -100,6 +105,18 @@ ultra-matrix-terminal/
 │   ├── darkweb.ps1     # Mode 13: Dark Web
 │   ├── ctf_mode.ps1    # Mode 14: CTF Challenge
 │   └── screensaver.ps1 # Mode 15: Matrix Screensaver
+│   └── learning/       # 11 system filesystems + task definitions
+│       ├── ubuntu.ps1  # Ubuntu 24.04
+│       ├── debian.ps1  # Debian 12
+│       ├── centos.ps1  # Rocky Linux 9
+│       ├── arch.ps1    # Arch Linux
+│       ├── kali.ps1    # Kali Linux
+│       ├── alpine.ps1  # Alpine Linux
+│       ├── opensuse.ps1# openSUSE Tumbleweed
+│       ├── windows.ps1 # Windows 11
+│       ├── winserver.ps1# Windows Server 2022
+│       ├── cisco.ps1   # Cisco IOS XE
+│       └── macos.ps1   # macOS Sequoia
 ├── assets/
 │   └── splash/         # Ascii art splash screens
 └── config/             # User settings (future)
