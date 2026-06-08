@@ -1,6 +1,6 @@
 # =====================================================================
 # Ultra Matrix Terminal — One-liner Installer
-# Run: irm https://raw.githubusercontent.com/<user>/ultra-matrix-terminal/main/install.ps1 | iex
+# Run: irm https://raw.githubusercontent.com/SanTobinoOfficial/matrixhacker/main/install.ps1 | iex
 # =====================================================================
 
 $repoOwner = "SanTobinoOfficial"

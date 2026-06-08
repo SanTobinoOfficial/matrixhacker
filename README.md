@@ -5,7 +5,7 @@
 ## One-Liner Install
 
 ```powershell
-irm https://raw.githubusercontent.com/<user>/ultra-matrix-terminal/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/SanTobinoOfficial/matrixhacker/main/install.ps1 | iex
 ```
 
 ## Manual Start
