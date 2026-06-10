@@ -579,14 +579,40 @@ Register-LCommand "find" {
 Register-LCommand "chmod" {
     param($args)
     if ($args.Count -lt 2) { return @("chmod: missing operand") }
-    $mode = $args[0]; $target = Resolve-LPath $args[1]; $item = Get-LItem $target
-    if (-not $item) { return @("chmod: cannot access '$($args[1])': No such file or directory") }
-    if ($mode -match "^\d{3}$") {
-        $r = if ([int]$mode[0] -band 4) { "r" } else { "-" }
-        $w = if ([int]$mode[0] -band 2) { "w" } else { "-" }
-        $x = if ([int]$mode[0] -band 1 -or $mode -eq "755" -or $mode -eq "777") { "x" } else { "-" }
+    $recursive = $false
+    $modeArg = $null; $targetArg = $null
+    foreach ($a in $args) { if ($a -eq "-R" -or $a -eq "-r") { $recursive = $true } elseif (-not $modeArg) { $modeArg = $a } else { $targetArg = $a } }
+    if (-not $modeArg -or -not $targetArg) { return @("chmod: missing operand") }
+    $target = Resolve-LPath $targetArg; $item = Get-LItem $target
+    if (-not $item) { return @("chmod: cannot access '$targetArg': No such file or directory") }
+    function ConvertOctalToPerms($digit, $isDir) {
+        $d = [int][string]$digit
+        $r = if ($d -band 4) { "r" } else { "-" }
+        $w = if ($d -band 2) { "w" } else { "-" }
+        $x = if ($d -band 1) { "x" } else { "-" }
+        return "$r$w$x"
+    }
+    if ($modeArg -match "^(\d)(\d)(\d)$") {
         $prefix = if ($item.Type -eq "dir") { "d" } else { "-" }
-        $item.Perms = "$prefix$r$w$x" + $item.Perms.Substring(3)
+        $item.Perms = "$prefix$(ConvertOctalToPerms $Matches[1] $false)$(ConvertOctalToPerms $Matches[2] $false)$(ConvertOctalToPerms $Matches[3] $false)"
+    } elseif ($modeArg -match "^([ugoa]*)([+\-=])([rwx]+)$") {
+        $who = $Matches[1]; $op = $Matches[2]; $bits = $Matches[3]
+        $perms = if ($item.Perms.Length -ge 10) { $item.Perms } else { "-rwxr-xr-x" }
+        $uBits = $perms.Substring(1,3).ToCharArray(); $gBits = $perms.Substring(4,3).ToCharArray(); $oBits = $perms.Substring(7,3).ToCharArray()
+        $applyBits = { param($sect, $op, $bits)
+            $s = $sect -join ""
+            foreach ($b in $bits.ToCharArray()) {
+                if ($b -eq "r") { if ($op -eq "+") { $s = $s -replace "^.", "r" } elseif ($op -eq "-") { $s = $s -replace "^.", "-" } }
+                if ($b -eq "w") { if ($op -eq "+") { $s = $s.Remove(1,1).Insert(1,"w") } elseif ($op -eq "-") { $s = $s.Remove(1,1).Insert(1,"-") } }
+                if ($b -eq "x") { if ($op -eq "+") { $s = $s.Remove(2,1).Insert(2,"x") } elseif ($op -eq "-") { $s = $s.Remove(2,1).Insert(2,"-") } }
+            }
+            return $s
+        }
+        $prefix = $perms[0]
+        if ($who -match "u" -or $who -eq "" -or $who -eq "a") { $uBits = (& $applyBits $uBits $op $bits).ToCharArray() }
+        if ($who -match "g" -or $who -eq "" -or $who -eq "a") { $gBits = (& $applyBits $gBits $op $bits).ToCharArray() }
+        if ($who -match "o" -or $who -eq "" -or $who -eq "a") { $oBits = (& $applyBits $oBits $op $bits).ToCharArray() }
+        $item.Perms = "$prefix$($uBits -join '')$($gBits -join '')$($oBits -join '')"
     }
     return @()
 }
@@ -758,13 +784,167 @@ Register-LCommand "tar" {
     return @("")
 }
 
+# -- tar (improved) --
+Register-LCommand "tar" {
+    param($args)
+    if ($args.Count -lt 1) { return @("tar: usage: tar [czxvf...] [archive] [files...]") }
+    $flags = ""; $archive = $null; $files = @()
+    foreach ($a in $args) { if ($a -like "-*") { $flags += $a.TrimStart("-") } elseif (-not $archive) { $archive = $a } else { $files += $a } }
+    if ($flags -notmatch "[cxt]") { $flags2 = if ($args.Count -gt 0) { $args[0] }; if ($flags2 -match "^[czxvfjt]+$") { $flags = $flags2 } }
+    if ($flags -match "c") {
+        $fileList = if ($files.Count -gt 0) { $files } else { @("(files)") }
+        $output = @()
+        if ($flags -match "v") { foreach ($f in $fileList) { $output += "a $f" } }
+        $output += if ($flags -match "z") { "gzip: $archive compressed" } else { "tar: $archive created" }
+        return $output
+    }
+    if ($flags -match "x") {
+        $output = @()
+        if ($flags -match "v") { $output += "x ./etc/", "x ./etc/hosts", "x ./etc/passwd", "x ./var/log/syslog" }
+        $output += "tar: extraction complete"
+        return $output
+    }
+    if ($flags -match "t") {
+        return @("./", "./etc/", "./etc/hosts", "./etc/passwd", "./var/", "./var/log/", "./var/log/syslog", "./home/student/")
+    }
+    return @("tar: unrecognized option. Try: tar czf archive.tar.gz /path")
+}
+
+# -- nmap --
+Register-LCommand "nmap" {
+    param($args)
+    $targetHost = "localhost"
+    foreach ($a in $args) { if ($a -notlike "-*") { $targetHost = $a } }
+    $ip = if ($targetHost -match "^\d+\.\d+\.\d+\.\d+") { $targetHost } else { "10.0.0.$(Rand 1 254)" }
+    return @(
+        "Starting Nmap 7.94SVN ( https://nmap.org )",
+        "Nmap scan report for $targetHost ($ip)",
+        "Host is up (0.00$(Rand 1 99)s latency).",
+        "",
+        "PORT      STATE  SERVICE    VERSION",
+        "22/tcp    open   ssh        OpenSSH 9.6p1",
+        "80/tcp    open   http       nginx 1.24.0",
+        "443/tcp   open   https      nginx 1.24.0",
+        "3306/tcp  closed mysql",
+        "8080/tcp  closed http-proxy",
+        "",
+        "Nmap done: 1 IP address (1 host up) scanned in 0.$(Rand 10 99) seconds"
+    )
+}
+
+# -- top (simple static) --
+Register-LCommand "top" {
+    $h = Get-Date -Format "HH:mm:ss"; $u = $script:learningUser
+    return @(
+        "top - $h up $(Rand 1 72)h $(Rand 0 59)m,  1 user,  load avg: 0.$(Rand 10 99), 0.$(Rand 5 50), 0.0$(Rand 1 9)",
+        "Tasks: 123 total,   1 running, 122 sleeping,   0 stopped,   0 zombie",
+        "%Cpu(s):  $(Rand 1 30).$(Rand 0 9) us,  $(Rand 1 10).$(Rand 0 9) sy,  0.0 ni, $(Rand 60 95).0 id,  0.0 wa",
+        "MiB Mem :  16000.0 total,   5000.0 free,   3245.0 used,   7755.0 buff/cache",
+        "MiB Swap:   2048.0 total,   2014.0 free,     34.0 used.   12000.0 avail Mem",
+        "",
+        "  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND",
+        "    1 root      20   0   12345   1234    890 S   0.0   0.0   0:03.12 systemd",
+        "  892 root      20   0   23456   3456   2234 S   0.0   0.0   0:45.23 sshd",
+        " 1245 www-data  20   0   34567   5678   4321 S   0.1   0.0   2:12.34 nginx",
+        " 2456 $u         20   0   45678  12345   8765 S   0.3   0.1   1:23.45 bash",
+        " 3789 $u         20   0   34567   2345   1234 R   0.0   0.0   0:00.01 top",
+        "",
+        "(press q or Ctrl+C to quit)"
+    )
+}
+
+# -- git --
+Register-LCommand "git" {
+    param($args)
+    if ($args.Count -eq 0) { return @("usage: git [options] <command>") }
+    $sub = $args[0]
+    $rest = if ($args.Count -gt 1) { $args[1..($args.Count-1)] } else { @() }
+    switch ($sub) {
+        "status"  { return @("On branch main", "Your branch is up to date with 'origin/main'.", "", "nothing to commit, working tree clean") }
+        "log"     { return @("commit a1b2c3d4e5f6 (HEAD -> main, origin/main)", "Author: $($script:learningUser) <$($script:learningUser)@example.com>", "Date:   $(Get-Date -Format 'ddd MMM dd HH:mm:ss yyyy') +0000", "", "    Initial commit", "") }
+        "add"     { return @() }
+        "commit"  { return @("[main a1b2c3d] $($rest -join ' ')", " 1 file changed, 1 insertion(+)") }
+        "push"    { return @("Enumerating objects: 3, done.", "Counting objects: 100% (3/3), done.", "Writing objects: 100% (3/3), 256 bytes | 256.00 KiB/s, done.", "Total 3 (delta 0), reused 0 (delta 0)", "To github.com:user/repo.git", "   a1b2c3d..b2c3d4e  main -> main") }
+        "pull"    { return @("Already up to date.") }
+        "clone"   { $repo = if ($rest.Count -gt 0) { $rest[0] } else { "repo" }; return @("Cloning into '$repo'...", "remote: Enumerating objects: 42, done.", "Receiving objects: 100% (42/42), 1.23 MiB | 2.34 MiB/s, done.") }
+        "branch"  { return @("* main", "  develop", "  feature/auth") }
+        "checkout" { return @("Switched to branch '$($rest -join ' ')'") }
+        "diff"    { return @("diff --git a/file.txt b/file.txt", "index a1b2c3..d4e5f6 100644", "--- a/file.txt", "+++ b/file.txt", "@@ -1,3 +1,4 @@", " line1", "+new line", " line2") }
+        "init"    { return @("Initialized empty Git repository in $($script:learningCwd)/.git/") }
+        default   { return @("git: '$sub' is not a git command. See 'git help'") }
+    }
+}
+
+# -- docker --
+Register-LCommand "docker" {
+    param($args)
+    if ($args.Count -eq 0) { return @("Usage: docker [OPTIONS] COMMAND") }
+    $sub = $args[0]; $rest = if ($args.Count -gt 1) { $args[1..($args.Count-1)] } else { @() }
+    $subCmd = if ($rest.Count -gt 0) { $rest[0] } else { "" }
+    switch ($sub) {
+        "ps"        { return @("CONTAINER ID   IMAGE          COMMAND                  CREATED       STATUS         PORTS                  NAMES", "a1b2c3d4e5f6   nginx:latest   '/docker-entrypoint...'   2 hours ago   Up 2 hours     0.0.0.0:80->80/tcp   web", "b2c3d4e5f6a7   mysql:8.0      'docker-entrypoint.s...'   2 hours ago   Up 2 hours     3306/tcp               db") }
+        "images"    { return @("REPOSITORY   TAG       IMAGE ID       CREATED        SIZE", "nginx        latest    a1b2c3d4e5f6   2 weeks ago    187MB", "mysql        8.0       b2c3d4e5f6a7   3 weeks ago    578MB", "ubuntu       24.04     c3d4e5f6a7b8   4 weeks ago    78.1MB") }
+        "run"       { return @("$(([guid]::NewGuid().ToString().Replace('-','').Substring(0,12)))") }
+        "stop"      { return @("$($rest -join ' ')") }
+        "rm"        { return @("$($rest -join ' ')") }
+        "rmi"       { return @("Untagged: $($rest -join ' ')", "Deleted: sha256:a1b2c3d4e5f6") }
+        "pull"      { $img = if ($rest.Count -gt 0) { $rest[0] } else { "image" }; return @("Using default tag: latest", "latest: Pulling from library/$img", "Digest: sha256:a1b2c3d4e5f6a7b8c9d0", "Status: Image is up to date for ${img}:latest") }
+        "build"     { return @("Step 1/4 : FROM ubuntu:24.04", "Step 2/4 : RUN apt-get update", "Step 3/4 : COPY . /app", "Step 4/4 : CMD ['/app/start.sh']", "Successfully built a1b2c3d4e5f6", "Successfully tagged myapp:latest") }
+        "exec"      { return @("") }
+        "logs"      { return @("$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') container started", "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') service ready") }
+        "network"   { return @("NETWORK ID     NAME      DRIVER    SCOPE", "a1b2c3d4e5f6   bridge    bridge    local", "b2c3d4e5f6a7   host      host      local") }
+        "volume"    { return @("DRIVER    VOLUME NAME", "local     myapp_data", "local     mysql_data") }
+        "compose"   { return @("Starting services...", "Starting db ... done", "Starting web ... done") }
+        default     { return @("docker: '$sub' is not a docker command. See 'docker help'") }
+    }
+}
+
+# -- nano / vi / vim (stub) --
+Register-LCommand "nano" {
+    param($args)
+    $f = if ($args.Count -gt 0) { $args[0] } else { "" }
+    return @("  [nano] Simulated editor mode - $f", "  (In a real terminal, nano would open here.)", "  Press Ctrl+X to exit nano." )
+}
+Register-LCommand "vi"   { return & $script:learningCommands["nano"] $args }
+Register-LCommand "vim"  { return & $script:learningCommands["nano"] $args }
+
+# -- chown --
+Register-LCommand "chown" {
+    param($args)
+    if ($args.Count -lt 2) { return @("chown: missing operand") }
+    $owner = $args[0]; $target = Resolve-LPath $args[1]; $item = Get-LItem $target
+    if (-not $item) { return @("chown: cannot access '$($args[1])': No such file or directory") }
+    if ($owner -match "^([^:]+):(.+)$") { $item.Owner = $Matches[1]; $item.Group = $Matches[2] }
+    else { $item.Owner = $owner }
+    return @()
+}
+
+# -- ssh --
+Register-LCommand "ssh" {
+    param($args)
+    $host = if ($args.Count -gt 0 -and $args[0] -notlike "-*") { $args[0] } else { "server" }
+    $user = if ($host -match "^(.+)@") { $Matches[1] } else { $script:learningUser }
+    $hostOnly = $host -replace "^.+@", ""
+    return @("ssh: connect to $hostOnly on port 22: Connection established (simulated)",
+        "Welcome to Ubuntu 24.04 LTS - $hostOnly",
+        "$user@${hostOnly}:~`$  (ssh session - type 'exit' to disconnect)")
+}
+
+# -- scp --
+Register-LCommand "scp" {
+    param($args)
+    $src = if ($args.Count -gt 0) { $args[0] } else { "file" }
+    $dst = if ($args.Count -gt 1) { $args[1] } else { "." }
+    return @("$src                100% 1024     1.0KB/s   00:00")
+}
+
 # -- which --
 Register-LCommand "which" {
     param($args)
     if ($args.Count -eq 0) { return @() }
-    $known = @("ls","cd","cat","cp","mv","rm","mkdir","touch","pwd","whoami","hostname","id","uname","date","cal","df","du","free","ps","kill","grep","find","chmod","sudo","systemctl","journalctl","ping","ip","ifconfig","wget","curl","sort","uniq","wc","tar","echo","head","tail","less","more","man","help","clear","exit")
+    $known = @("ls","cd","cat","cp","mv","rm","mkdir","touch","pwd","whoami","hostname","id","uname","date","cal","df","du","free","ps","kill","grep","find","chmod","chown","sudo","systemctl","journalctl","ping","nmap","ip","ifconfig","wget","curl","sort","uniq","wc","tar","echo","head","tail","less","more","man","help","clear","exit","git","docker","nano","vi","vim","ssh","scp","top","history","env","alias","uptime","lsblk","ss","netstat","neofetch","who","w")
     $results = @()
-    foreach ($c in $args) { if ($known -contains $c) { $results += "/usr/bin/$c" } else { $results += "$c not found" } }
+    foreach ($c in $args) { if ($known -contains $c -or $script:learningCommands.ContainsKey($c)) { $results += "/usr/bin/$c" } else { $results += "which: no $c in (/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin)" } }
     return $results
 }
 
@@ -1233,30 +1413,43 @@ Register-LCommand "lsof" {
 }
 
 Register-LCommand "neofetch" {
-    $os = $script:learningOsName
-    $host = $script:learningHost
-    $user = $script:learningUser
-    $kernel = "6.8.0-45-generic"
-    $upH = Get-Random -Minimum 1 -Maximum 48
-    $upM = Get-Random -Minimum 0 -Maximum 59
-    $pkgs = Get-Random -Minimum 800 -Maximum 2200
-    $shell = "bash 5.2.21"
+    $os = $script:learningOsName; $hostN = $script:learningHost; $user = $script:learningUser
+    $upH = Rand 1 72; $upM = Rand 0 59; $pkgs = Rand 800 2200
     $cpu = "Intel Core i7-12700K (16) @ 5.000GHz"
-    $mem = "$([Math]::Round((Get-Random -Min 2000 -Max 6000)/1000.0, 1))GiB / 16.0GiB"
-    return @(
-        "        #####       $user@$host",
-        "       #######      ---------------",
-        "       ##O#O##      OS: $os",
-        "       #######      Host: VirtualMachine 1.0",
-        "     ###########    Kernel: $kernel",
-        "    #############   Uptime: ${upH}h ${upM}m",
-        "   ###############  Packages: $pkgs (dpkg)",
-        "   ###############  Shell: $shell",
-        "    #############   Terminal: xterm-256color",
-        "      #########     CPU: $cpu",
-        "                    Memory: $mem",
+    $memUsed = [Math]::Round((Rand 2000 6000)/1000.0, 1)
+    $info = @(
+        "${user}@$hostN",
+        "$(('-') * ($user.Length + $hostN.Length + 1))",
+        "OS: $os",
+        "Host: VirtualMachine 2.0",
+        "Kernel: 6.8.0-45-generic",
+        "Uptime: ${upH}h ${upM}m",
+        "Packages: $pkgs",
+        "Shell: bash 5.2.21",
+        "Terminal: xterm-256color",
+        "CPU: $cpu",
+        "Memory: ${memUsed}GiB / 16.0GiB",
         ""
     )
+    $logos = @{
+        "ubuntu"  = @("         .--.      ","       .'  . '.    ","      /  .-. -.  \ ","      | (   ) |   ","       \  `-'  /   ","        `---'     ","                   ")
+        "debian"  = @("    _____         ","   /  __ \        "," _| /  | |        ","|_  .  -.        ","  | \.  /         ","   \___/          ","                  ")
+        "arch"    = @("       /\        ","      /  \       ","     / /\ \      ","    / /  \ \     ","   /_/ /\ \_\    ","  /_/ /  \_\_\   ","                 ")
+        "kali"    = @("  .-.            "," (o o)           ","  | |            "," /'-.`-.         ","/    '-'         ","                 ","                 ")
+        "alpine"  = @("    /\ /\        ","   /  V  \       ","  / /   \ \      "," /_/  ,   \_\    "," \/  / \  \/     ","   \/   \/       ","                 ")
+        "windows" = @("   _______       ","  |       |      ","  |       |      ","  +-------+      ","  |       |      ","  |_______|      ","                 ")
+        "default" = @("   +--------+    ","   |        |    ","   | SERVER |    ","   |        |    ","   +--------+    ","                 ","                 ")
+    }
+    $logoKey = "default"
+    foreach ($k in $logos.Keys) { if ($os -ilike "*$k*" -or $hostN -ilike "*$k*") { $logoKey = $k; break } }
+    $logo = $logos[$logoKey]
+    $output = @()
+    for ($i = 0; $i -lt [Math]::Max($logo.Count, $info.Count); $i++) {
+        $l = if ($i -lt $logo.Count) { $logo[$i] } else { (" " * 18) }
+        $r = if ($i -lt $info.Count) { $info[$i] } else { "" }
+        $output += "$l  $r"
+    }
+    return $output
 }
 
 Register-LCommand "w" {
@@ -1427,11 +1620,20 @@ function Process-LSpecialCommand {
 
 function Check-CommandMatches {
     param([string]$Input, [string]$Expected)
-    $in = $Input.Trim().ToLower().Replace("  ", " ")
-    $ex = $Expected.Trim().ToLower().Replace("  ", " ")
+    $in = $Input.Trim().ToLower() -replace "\s+", " "
+    $ex = $Expected.Trim().ToLower() -replace "\s+", " "
     if ($in -eq $ex) { return $true }
-    # Also match if the command starts the same (covers pipes)
-    if ($in -match "^$([regex]::Escape($ex))") { return $true }
+    # Allow sudo prefix: "sudo apt install foo" matches "apt install foo"
+    if ($in -match "^sudo\s+(.+)$" -and $Matches[1] -eq $ex) { return $true }
+    # Allow if input starts with expected (covers pipes like "ls | grep foo" when expected is just "ls")
+    if ($in -match "^$([regex]::Escape($ex))(\s|$|\|)") { return $true }
+    # Allow extra flags: "ls -la" matches "ls -l" or vice versa
+    $inParts = $in -split "\s+"; $exParts = $ex -split "\s+"
+    if ($inParts[0] -eq $exParts[0] -and $exParts.Count -le $inParts.Count) {
+        $nonFlagEx = $exParts | Where-Object { $_ -notlike "-*" }
+        $nonFlagIn = $inParts | Where-Object { $_ -notlike "-*" }
+        if (($nonFlagEx | ForEach-Object { $nonFlagIn -contains $_ } | Where-Object { -not $_ }).Count -eq 0 -and $nonFlagEx.Count -gt 0 -and $nonFlagIn.Count -ge $nonFlagEx.Count) { return $true }
+    }
     return $false
 }
 
@@ -1646,25 +1848,31 @@ function Start-LearningSession {
     Clear-Host
 
     # Welcome screen
-    $w = 55
+    $w = 57
     $border = [char]0x2550
     $tl = [char]0x2554; $tr = [char]0x2557; $bl = [char]0x255A; $br = [char]0x255D
     $vb = [char]0x2551; $lm = [char]0x2560; $rm = [char]0x2563; $hm = [char]0x2550
+    $diffLabel = ""
+    if ($Tasks.Count -le 5) { $diffLabel = "[*   ] Beginner" }
+    elseif ($Tasks.Count -le 10) { $diffLabel = "[**  ] Intermediate" }
+    elseif ($Tasks.Count -le 15) { $diffLabel = "[*** ] Advanced" }
+    else { $diffLabel = "[****] Expert/All" }
     Write-Host ""
     Write-Host "  $tl$([string]$border * $w)$tr" -ForegroundColor $Theme.accent
-    $title = " TRYB NAUKI  |  $SystemName "
-    Write-Host "  $vb$($title.PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $vb$("  ULTRA MATRIX TERMINAL  -  TRYB NAUKI".PadRight($w))$vb" -ForegroundColor Cyan
     Write-Host "  $lm$([string]$hm * $w)$rm" -ForegroundColor $Theme.accent
-    $osLine = " System: $OsName"
-    Write-Host "  $vb$($osLine.PadRight($w))$vb" -ForegroundColor DarkGray
-    $taskLine = " Zadania: $($Tasks.Count)  |  Tab: dopelnianie  |  Strzalki: historia"
-    Write-Host "  $vb$($taskLine.PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $vb$("  System:   $SystemName".PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $vb$("  OS:       $OsName".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $vb$("  Zadania:  $($Tasks.Count)  Poziom: $diffLabel".PadRight($w))$vb" -ForegroundColor DarkGray
     Write-Host "  $lm$([string]$hm * $w)$rm" -ForegroundColor $Theme.accent
-    Write-Host "  $vb$("  .hint   - podpowiedz do biezacego zadania".PadRight($w))$vb" -ForegroundColor DarkYellow
-    Write-Host "  $vb$("  .skip   - pomin i przejdz do nastepnego".PadRight($w))$vb" -ForegroundColor DarkYellow
-    Write-Host "  $vb$("  .check  - sprawdz postep zadania (scriptblock)".PadRight($w))$vb" -ForegroundColor DarkYellow
-    Write-Host "  $vb$("  .status - pokaz postep sesji".PadRight($w))$vb" -ForegroundColor DarkYellow
-    Write-Host "  $vb$("  .exit   - zakoncz sesje nauki".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .hint   [H]  Podpowiedz do biezacego zadania".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .skip   [S]  Pomin i przejdz do nastepnego".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .status [P]  Pokaz postep sesji".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .exit   [Q]  Zakoncz sesje nauki".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $lm$([string]$hm * $w)$rm" -ForegroundColor $Theme.accent
+    Write-Host "  $vb$("  Tab: dopelnianie komend i sciezek".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $vb$("  Strzalki gora/dol: historia komend".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $vb$("  help: lista dostepnych komend  man <cmd>: manpage".PadRight($w))$vb" -ForegroundColor DarkGray
     Write-Host "  $bl$([string]$border * $w)$br" -ForegroundColor $Theme.accent
     Write-Host ""
     Write-Host "  Nacisnij ENTER aby rozpoczac..." -ForegroundColor DarkGray
@@ -1723,7 +1931,9 @@ function Start-LearningSession {
 
             # Prompt
             $rootChar = if ($script:learningSudo -or $script:learningUser -eq "root") { "#" } else { "$" }
-            Write-Host -NoNewline "$Username@$Hostname`:$($script:learningCwd)$rootChar " -ForegroundColor $Theme.promptColor
+            $displayCwd = $script:learningCwd -replace "^/home/$Username", "~"
+            if ($displayCwd -eq "/home") { $displayCwd = "/home" }
+            Write-Host -NoNewline "$Username@$Hostname`:$displayCwd$rootChar " -ForegroundColor $Theme.promptColor
 
             # Read user input
             $input = Read-LearningInput
@@ -1769,7 +1979,11 @@ function Start-LearningSession {
                 $hint = $task.Hint
                 if ([string]::IsNullOrEmpty($hint)) { $hint = "Sprobuj: $($task.ExpectedCommand)" }
                 $script:learningHintUsed[$script:learningCurrentTask] = $true
-                Write-Host ""; Write-Host "  [HINT] $hint" -ForegroundColor Yellow; Write-Host ""
+                Write-Host ""
+                Write-Host "  $([char]0x250C)$([char]0x2500 * 50)$([char]0x2510)" -ForegroundColor Yellow
+                Write-Host "  $([char]0x2502) PODPOWIEDZ: $($hint.PadRight(38))$([char]0x2502)" -ForegroundColor Yellow
+                Write-Host "  $([char]0x2514)$([char]0x2500 * 50)$([char]0x2518)" -ForegroundColor Yellow
+                Write-Host ""
                 continue
             }
             if ($trimmed -eq ".status") {
@@ -1780,9 +1994,15 @@ function Start-LearningSession {
                 $barFilled = [Math]::Floor(($done / [Math]::Max(1, $total)) * 30)
                 $bar = ([string][char]0x2588 * $barFilled) + ([string][char]0x2591 * (30 - $barFilled))
                 $pct = [Math]::Floor(($done / [Math]::Max(1, $total)) * 100)
+                $barColor = if ($pct -ge 80) { "Green" } elseif ($pct -ge 40) { "Yellow" } else { "Cyan" }
                 Write-Host ""
-                Write-Host "  [$bar] $pct%" -ForegroundColor Cyan
-                Write-Host "  Wykonane: $done/$total  Pominiete: $skipped  Podpowiedzi: $hints  Biezace: $($script:learningCurrentTask + 1)/$total" -ForegroundColor Gray
+                Write-Host "  $([char]0x250C)$([char]0x2500 * 40)$([char]0x2510)" -ForegroundColor DarkGray
+                Write-Host ("  $([char]0x2502) POSTEP  [{0}] {1,3}% $([char]0x2502)" -f $bar, $pct) -ForegroundColor $barColor
+                Write-Host ("  $([char]0x2502) Wykonane:    {0}/{1}  {2}$([char]0x2502)" -f $done, $total, " " * (26 - "$done/$total".Length)) -ForegroundColor Cyan
+                Write-Host ("  $([char]0x2502) Pominiete:   {0}     {1}$([char]0x2502)" -f $skipped, " " * 27) -ForegroundColor Yellow
+                Write-Host ("  $([char]0x2502) Podpowiedzi: {0}     {1}$([char]0x2502)" -f $hints, " " * 27) -ForegroundColor DarkGray
+                Write-Host ("  $([char]0x2502) Biezace:     {0}/{1}  {2}$([char]0x2502)" -f ($script:learningCurrentTask + 1), $total, " " * (26 - "$($script:learningCurrentTask + 1)/$total".Length)) -ForegroundColor Gray
+                Write-Host "  $([char]0x2514)$([char]0x2500 * 40)$([char]0x2518)" -ForegroundColor DarkGray
                 Write-Host ""
                 continue
             }
@@ -1816,16 +2036,29 @@ function Start-LearningSession {
                     }
                     $color = "Gray"
                     if ($line -match "^  \[(HINT|SKIP|CHECK|POSTEP)") { $color = "Yellow" }
-                    elseif ($line -match "error|failed|denied|No such file|not found|permission" -and $line -notmatch "^\s*#") { $color = "Red" }
+                    elseif ($line -match "(error|failed|denied|No such file|not found|permission denied|cannot|invalid)" -and $line -notmatch "^\s*#") { $color = "Red" }
                     elseif ($line -match "^drwxr|^drwx") { $color = "Cyan" }
                     elseif ($line -match "^-rwx|-r-x") { $color = "Green" }
                     elseif ($line -match "^-rw") { $color = "White" }
                     elseif ($line -match "^total ") { $color = "DarkGray" }
-                    elseif ($line -match "^\s*#|^;") { $color = "DarkGreen" }
+                    elseif ($line -match "^\s*#|^;|^//") { $color = "DarkGreen" }
                     elseif ($line -match "^\[.*\]$") { $color = "Yellow" }
-                    elseif ($line -match "^(Active|Loaded|Main PID|Tasks|Memory|CGroup)" ) { $color = "Cyan" }
-                    elseif ($line -match "running|active|enabled|online|UP" -and $line -notmatch "not ") { $color = "Green" }
-                    elseif ($line -match "stopped|inactive|disabled|DOWN|failed|dead") { $color = "Red" }
+                    elseif ($line -match "^(Active|Loaded|Main PID|Tasks|Memory|CGroup|   CPU)") { $color = "Cyan" }
+                    elseif ($line -match "running|active|enabled|online| UP " -and $line -notmatch "not ") { $color = "Green" }
+                    elseif ($line -match "stopped|inactive|disabled| DOWN|dead") { $color = "Red" }
+                    elseif ($line -match "^(top|Tasks|%Cpu|MiB)") { $color = "Cyan" }
+                    elseif ($line -match "^(commit|Author|Date|Branch|On branch|HEAD)") { $color = "Yellow" }
+                    elseif ($line -match "^\+") { $color = "Green" }
+                    elseif ($line -match "^-" -and $line -notmatch "^---") { $color = "Red" }
+                    elseif ($line -match "^CONTAINER|^IMAGE|^NETWORK|^VOLUME|^DRIVER|^REPOSITORY") { $color = "Cyan" }
+                    elseif ($line -match "^Step \d+") { $color = "DarkYellow" }
+                    elseif ($line -match "^(NAME|PORT|STATE|PID|USER)") { $color = "DarkGray" }
+                    elseif ($line -match "Nmap scan report|Host is up|Starting Nmap") { $color = "Green" }
+                    elseif ($line -match "^(\d+/tcp|udp)") { $color = "Cyan" }
+                    elseif ($line -match "open\s") { $color = "Green" }
+                    elseif ($line -match "closed|filtered") { $color = "DarkGray" }
+                    elseif ($line -match "@.*---") { $color = "White" }
+                    elseif ($line -match "@") { $color = "Cyan" }
                     Write-Host $line -ForegroundColor $color
                 }
                 Write-Host ""
