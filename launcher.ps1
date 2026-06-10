@@ -71,7 +71,7 @@ function Show-GuiLauncher {
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "Ultra Matrix Terminal v2.0"
-    $form.Size = New-Object Drawing.Size(820, 700)
+    $form.Size = New-Object Drawing.Size(820, 720)
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [Drawing.Color]::FromArgb(8, 8, 8)
     $form.FormBorderStyle = "FixedSingle"
@@ -113,6 +113,60 @@ function Show-GuiLauncher {
     $sub.Location = New-Object Drawing.Point(230, 55)
     $form.Controls.Add($sub)
 
+    # "Change Theme" button
+    $themeBtn = New-Object System.Windows.Forms.Button
+    $themeBtn.Text = "[T] Change Theme"
+    $themeBtn.Font = New-Object Drawing.Font("Consolas", 8)
+    $themeBtn.ForeColor = [Drawing.Color]::FromName($currentTheme.promptColor)
+    $themeBtn.BackColor = [Drawing.Color]::FromArgb(18, 18, 18)
+    $themeBtn.FlatStyle = "Flat"
+    $themeBtn.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(60, 60, 60)
+    $themeBtn.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(35, 35, 35)
+    $themeBtn.Size = New-Object Drawing.Size(180, 25)
+    $themeBtn.Location = New-Object Drawing.Point(590, 55)
+    $themeBtn.Cursor = [Windows.Forms.Cursors]::Hand
+    $themeBtn.Add_Click({
+        $allThemes = Get-AllThemes | Sort-Object { $_.name }
+        $tDialog = New-Object System.Windows.Forms.Form
+        $tDialog.Text = "Select Theme"
+        $tDialog.Size = New-Object Drawing.Size(360, 520)
+        $tDialog.StartPosition = "CenterParent"
+        $tDialog.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
+        $tDialog.FormBorderStyle = "FixedDialog"
+        $tDialog.MaximizeBox = $false; $tDialog.MinimizeBox = $false
+        $tLabel = New-Object System.Windows.Forms.Label
+        $tLabel.Text = "Select color theme:"; $tLabel.ForeColor = [Drawing.Color]::Gray
+        $tLabel.Font = New-Object Drawing.Font("Consolas", 9); $tLabel.Size = New-Object Drawing.Size(320, 20)
+        $tLabel.Location = New-Object Drawing.Point(15, 10); $tDialog.Controls.Add($tLabel)
+        $tList = New-Object System.Windows.Forms.ListBox
+        $tList.Font = New-Object Drawing.Font("Consolas", 9)
+        $tList.BackColor = [Drawing.Color]::FromArgb(18, 18, 18); $tList.ForeColor = [Drawing.Color]::Lime
+        $tList.Size = New-Object Drawing.Size(320, 400); $tList.Location = New-Object Drawing.Point(15, 35)
+        foreach ($t in $allThemes) { $tList.Items.Add("$($t.name)  [$($t.id)]") | Out-Null }
+        $tDialog.Controls.Add($tList)
+        $tOk = New-Object System.Windows.Forms.Button
+        $tOk.Text = "Select"; $tOk.ForeColor = [Drawing.Color]::Lime
+        $tOk.BackColor = [Drawing.Color]::FromArgb(18, 18, 18); $tOk.FlatStyle = "Flat"
+        $tOk.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(60, 60, 60)
+        $tOk.Size = New-Object Drawing.Size(100, 28); $tOk.Location = New-Object Drawing.Point(125, 445)
+        $tOk.Add_Click({
+            if ($tList.SelectedIndex -ge 0) {
+                $sel = ($tList.SelectedItem -replace '\s+\[.*\]$', '')
+                $chosen = $allThemes | Where-Object { $_.name -eq $sel }
+                if ($chosen) {
+                    Set-Setting "theme" $chosen.id
+                    $script:savedTheme = $chosen.id
+                    $themeLabel.Text = "Theme: $($chosen.name)"
+                    try { $themeLabel.ForeColor = [Drawing.Color]::FromName($chosen.promptColor) } catch { }
+                }
+            }
+            $tDialog.Close()
+        })
+        $tDialog.Controls.Add($tOk)
+        $tDialog.ShowDialog() | Out-Null
+    })
+    $form.Controls.Add($themeBtn)
+
     $x = 25; $y = 95; $i = 0
     foreach ($m in $modes) {
         $themeEntry = $script:Themes[$m.Id]
@@ -123,7 +177,7 @@ function Show-GuiLauncher {
         $btn.Size = New-Object Drawing.Size(240, 60)
         $btn.Location = New-Object Drawing.Point($x, $y)
         $btn.BackColor = [Drawing.Color]::FromArgb(18, 18, 18)
-        $btn.ForeColor = [Drawing.Color]::$themeColor
+        try { $btn.ForeColor = [Drawing.Color]::$themeColor } catch { $btn.ForeColor = [Drawing.Color]::Gray }
         $btn.Font = New-Object Drawing.Font("Consolas", 8, [Drawing.FontStyle]::Bold)
         $btn.FlatStyle = "Flat"
         $btn.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(50, 50, 50)
@@ -144,13 +198,13 @@ function Show-GuiLauncher {
     }
 
     $ver = New-Object System.Windows.Forms.Label
-    $ver.Text = "v2.0 | Escape to exit | github.com/SanTobinoOfficial/matrixhacker"
+    $ver.Text = "v2.0 | Escape: exit  |  github.com/SanTobinoOfficial/matrixhacker"
     $ver.Font = New-Object Drawing.Font("Consolas", 8)
     $ver.ForeColor = [Drawing.Color]::DarkGray
     $ver.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
     $ver.TextAlign = "MiddleCenter"
     $ver.Size = New-Object Drawing.Size(780, 20)
-    $ver.Location = New-Object Drawing.Point(20, 620)
+    $ver.Location = New-Object Drawing.Point(20, 655)
     $form.Controls.Add($ver)
 
     $form.ShowDialog() | Out-Null
