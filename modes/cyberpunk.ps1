@@ -7,7 +7,7 @@ function Build-CYBERPUNKCOMMANDS {
         C "whoami" @("ronin")
         C "hostname" @("netrunner")
         C "id" @("uid=0(root) gid=0(root) groups=0(root),4(adm),20(datacrawler)")
-        C "icebreaker --scan arasaka.neonet/24" @("ICEbreaker v3.7.1 — Neural Interface Scanner",
+        C "icebreaker --scan arasaka.neonet/24" @("ICEbreaker v3.7.1 - Neural Interface Scanner",
             "------------------------------------------------",
             "Scanning subnet: arasaka.neonet/24",
             "Nodes discovered: 34",
@@ -21,19 +21,19 @@ function Build-CYBERPUNKCOMMANDS {
             "",
             "⚠  1 Black ICE node detected. Evasion countermeasures active.")
         C "subnet-ping --burst arasaka.neonet" @("Pinging gateway: arasaka.neonet (10.0.1.1) ... OK (3ms)",
-            "Pinging 10.0.1.2 ... OK (1ms) — Arasaka DNS",
-            "Pinging 10.0.1.7 ... OK (12ms) — Legacy Term",
-            "Pinging 10.0.1.14 ... OK (4ms) — Corp Data",
-            "Pinging 10.0.1.22 ... TIMEOUT — Black ICE zone",
-            "Pinging 10.0.1.30 ... OK (2ms) — Access Gateway",
-            "Pinging 10.0.1.31 ... OK (3ms) — Mail Relay",
-            "Pinging 10.0.1.42 ... OK (7ms) — Exec Terminal",
+            "Pinging 10.0.1.2 ... OK (1ms) - Arasaka DNS",
+            "Pinging 10.0.1.7 ... OK (12ms) - Legacy Term",
+            "Pinging 10.0.1.14 ... OK (4ms) - Corp Data",
+            "Pinging 10.0.1.22 ... TIMEOUT - Black ICE zone",
+            "Pinging 10.0.1.30 ... OK (2ms) - Access Gateway",
+            "Pinging 10.0.1.31 ... OK (3ms) - Mail Relay",
+            "Pinging 10.0.1.42 ... OK (7ms) - Exec Terminal",
             "",
             "8 hosts alive / 1 timed out")
-        Cprog "daemon-connect //data/corp/exec/finance_transfers" @("[DAEMON] //data/corp/exec/finance_transfers — connecting...",
+        Cprog "daemon-connect //data/corp/exec/finance_transfers" @("[DAEMON] //data/corp/exec/finance_transfers - connecting...",
             "[AUTH] Credentials required",
             "[AUTH] Using neural handshake...",
-            "[AUTH] Biometric match: 98.7% — Access granted",
+            "[AUTH] Biometric match: 98.7% - Access granted",
             "[DAEMON] Channel established at 2.4 Gbps",
             "",
             "  /finance_transfers/",
@@ -56,7 +56,7 @@ function Build-CYBERPUNKCOMMANDS {
             "  deck_bridge.sys          0.91 ⚠    DOPPELGANGER-ICE",
             "",
             "⚠ WARNING: 2 malicious ICE programs detected.",
-            "⚠ Doppelganger ICE detected — memory corruption risk.")
+            "⚠ Doppelganger ICE detected - memory corruption risk.")
         C "datamine --target //data/corp/exec/offscreen_accounts.csv --columns 'account,balance,owner'" @("[DATAMINE] Extracting from offscreen_accounts.csv",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "account          | balance        | owner",
@@ -76,9 +76,9 @@ function Build-CYBERPUNKCOMMANDS {
             "loopback         ACTIVE    23,567      23,567     0ms",
             "",
             "Traffic analysis:",
-            "  eth1 — high outbound activity to 10.0.1.1 (Arasaka FW)",
-            "  eth0 — data exfil stream to secure tunnel")
-        C "decrypt --algorithm xchacha20 --file data.exf" @("[DECRYPT] xchacha20 — data.exf",
+            "  eth1 - high outbound activity to 10.0.1.1 (Arasaka FW)",
+            "  eth0 - data exfil stream to secure tunnel")
+        C "decrypt --algorithm xchacha20 --file data.exf" @("[DECRYPT] xchacha20 - data.exf",
             "Key: ******** (64-char hex key)",
             "Nonce: 2a4f71b9c83d5e0012345678",
             "",
@@ -94,7 +94,7 @@ function Build-CYBERPUNKCOMMANDS {
             " 2  10.0.0.254 (10.0.0.254)  1.234 ms  1.198 ms  1.201 ms",
             " 3  arasaka-gw-01.arasaka.neonet (10.0.1.1)  3.456 ms  3.412 ms  3.398 ms",
             "",
-            "Traceroute complete — 3 hops")
+            "Traceroute complete - 3 hops")
         C "access-log --show /var/log/icewall.log --tail 8" @("2026-03-16T04:12:01Z [AUTH] user=ronin action=login src=10.0.0.42 result=ALLOW",
             "2026-03-16T04:15:33Z [SCAN] probe=10.0.0.99 type=portscan target=10.0.1.1 result=BLOCK",
             "2026-03-16T04:20:12Z [AUTH] user=ytanaka action=login src=10.0.1.30 result=ALLOW",
@@ -102,7 +102,7 @@ function Build-CYBERPUNKCOMMANDS {
             "2026-03-16T04:30:01Z [AUTH] user=ronin action=data_request resource=finance_transfers result=ALLOW",
             "2026-03-16T04:31:22Z [EXFIL] data_out=2.4MB dest=10.0.0.42 channel=tunnel-enc status=COMPLETE",
             "2026-03-16T04:35:00Z [ICE] signature=DOPPELGANGER-ICE src=10.0.1.22 status=PROPAGATING",
-            "2026-03-16T04:35:01Z [ALERT] ICE propagation detected — quarantine zone active")
+            "2026-03-16T04:35:01Z [ALERT] ICE propagation detected - quarantine zone active")
         C "ls -la /data/exfil/" @("total 24576",
             "drwxrwxrwx 2 root datacrawler     4096 Mar 16 04:31 .",
             "drwxr-xr-x 5 root root            4096 Mar 14 22:00 ..",
@@ -131,7 +131,7 @@ function Build-CYBERPUNKCOMMANDS {
             "  Network:          Arasaka-Net bridge / DarkNet tor",
             "  Stealth Level:    0.94",
             "  Signal masking:   ENABLED (chameleon protocol)")
-        C "cat /etc/netrunner/hosts" @("# Neural host file — Arasaka NET cluster",
+        C "cat /etc/netrunner/hosts" @("# Neural host file - Arasaka NET cluster",
             "127.0.0.1       localhost localhost.neural",
             "10.0.1.1        gateway.arasaka.neonet gw",
             "10.0.1.14       dataserv.corp dataserv",

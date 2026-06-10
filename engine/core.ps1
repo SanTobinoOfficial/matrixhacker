@@ -1,9 +1,9 @@
 ﻿# =====================================================================
-# CORE ENGINE — Matrix-Rain, Type-Command, Show-Output, Session Loop
+# CORE ENGINE - Matrix-Rain, Type-Command, Show-Output, Session Loop
 # =====================================================================
 
 # =====================================================================
-# MATRIX-RAIN v3 — multi-style, overlay typing, batch rendering
+# MATRIX-RAIN v3 - multi-style, overlay typing, batch rendering
 # =====================================================================
 function Matrix-Rain {
     param([int]$DurationSeconds = 20, [switch]$Infinite, [ValidateNotNull()][hashtable]$Theme)
@@ -112,7 +112,7 @@ function Matrix-Rain {
 }
 
 # =====================================================================
-# TYPE-COMMAND — realistic typing with typos and corrections
+# TYPE-COMMAND - realistic typing with typos and corrections
 # =====================================================================
 function Type-Command {
     param([string]$Text)
@@ -155,7 +155,7 @@ function Type-Command {
 }
 
 # =====================================================================
-# SHOW-OUTPUT — colored output with ls emulation and pager
+# SHOW-OUTPUT - colored output with ls emulation and pager
 # =====================================================================
 function Show-Output {
     param([string[]]$Lines, [hashtable]$Theme, [switch]$NoPager)
@@ -210,7 +210,7 @@ function Show-Output {
 }
 
 # =====================================================================
-# PRESS-TO-REVEAL TYPING LOOP — shared by all modes
+# PRESS-TO-REVEAL TYPING LOOP - shared by all modes
 # =====================================================================
 function Invoke-PressToReveal {
     param([string]$Text, [string]$PromptColor)
@@ -262,7 +262,7 @@ function Invoke-PressToReveal {
 }
 
 # =====================================================================
-# MAIN TERMINAL SESSION — shared by all modes
+# MAIN TERMINAL SESSION - shared by all modes
 # =====================================================================
 function Start-TerminalSession {
     param(

@@ -9,14 +9,14 @@ function Build-MRROBOTCOMMANDS {
         C "id" @("uid=0(root) gid=0(root) groups=0(root)")
         C "cat /etc/fsociety/members.txt" @("=== fsociety Members ===",
             "",
-            "mrrobot            — Elliot Alderson",
-            "darlene            — Darlene Alderson",
-            "cisco              — Cisco",
-            "romero             — Romero",
-            "mobley             — Mobley",
-            "trenton            — Trenton",
-            "whiterose          — Whiterose (Minister Zhang)",
-            "tyrell             — Tyrell Wellick (ally)")
+            "mrrobot            - Elliot Alderson",
+            "darlene            - Darlene Alderson",
+            "cisco              - Cisco",
+            "romero             - Romero",
+            "mobley             - Mobley",
+            "trenton            - Trenton",
+            "whiterose          - Whiterose (Minister Zhang)",
+            "tyrell             - Tyrell Wellick (ally)")
         Cprog "ddos --target 'https://www.e-corp.com' --workers 500 --duration 120" @("[DDOS] Initializing distributed denial of service...",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "  Target:  https://www.e-corp.com",
@@ -32,17 +32,17 @@ function Build-MRROBOTCOMMANDS {
             "  Errors:   12 (0.0002%)",
             "  Target status: TIMEOUT (no response)",
             "  [OK] e-corp.com is DOWN.")
-        C "wipe --disk /dev/sda --method dod --passes 3" @("[WIPE] Disk sanitization — /dev/sda",
+        C "wipe --disk /dev/sda --method dod --passes 3" @("[WIPE] Disk sanitization - /dev/sda",
             "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
             "  Method: DoD 5220.22-M (3-pass)",
-            "  Pass 1:  0x00 write — ██████████████████████ 100%",
-            "  Pass 2:  0xFF write — ██████████████████████ 100%",
-            "  Pass 3:  random data — ██████████████████████ 100%",
+            "  Pass 1:  0x00 write - ██████████████████████ 100%",
+            "  Pass 2:  0xFF write - ██████████████████████ 100%",
+            "  Pass 3:  random data - ██████████████████████ 100%",
             "  Verification: ██████████████████████ 100%",
             "",
             "  [COMPLETE] 500GB sanitized.",
             "  WARNING: This disk is now blank.")
-        Cprog "encrypt --path /mnt/e-corp/data --key fsociety_key.pub" @("[ENCRYPT] Batch encryption — /mnt/e-corp/data",
+        Cprog "encrypt --path /mnt/e-corp/data --key fsociety_key.pub" @("[ENCRYPT] Batch encryption - /mnt/e-corp/data",
             "  Algorithm: RSA-4096 + AES-256-GCM",
             "  Key: fsociety_key.pub",
             "  Files found: 1,247",
@@ -66,7 +66,7 @@ function Build-MRROBOTCOMMANDS {
             "  [OPENED] 2026-03-16 05:14:23 UTC",
             "  [LINK CLICKED] 2026-03-16 05:14:31 UTC",
             "  [CREDENTIALS CAPTURED] tyrell / I_Love_My_Son!23")
-        C "scan --target 10.0.0.0/24 --verbose" @("Target: 10.0.0.0/24 — E Corp internal subnet",
+        C "scan --target 10.0.0.0/24 --verbose" @("Target: 10.0.0.0/24 - E Corp internal subnet",
             "  Hosts discovered: 15",
             "",
             "  10.0.0.1    UP     Gateway",
@@ -86,7 +86,7 @@ function Build-MRROBOTCOMMANDS {
             "Disallow: /backup",
             "Disallow: /finance",
             "Disallow: /secret/",
-            "# fsociety was here — Oct 12, 2015")
+            "# fsociety was here - Oct 12, 2015")
         Cprog "sqlmap -u 'https://admin.e-corp.com/login' --dbs --batch" @("        ___",
             "       __H__",
             " ___ ___[(]_____ ___ ___  {1.8.2#stable}",

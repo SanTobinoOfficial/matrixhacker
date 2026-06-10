@@ -1,5 +1,5 @@
 ﻿# =====================================================================
-# HELPERS — shared utility functions for all modes
+# HELPERS - shared utility functions for all modes
 # =====================================================================
 
 # Cross-platform console key reader (safe in ISE, SSH, remote)

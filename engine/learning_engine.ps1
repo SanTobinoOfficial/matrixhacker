@@ -155,14 +155,28 @@ Register-LCommand "ls" {
         return $output
     }
     if ($entries.Count -eq 0) { return @("") }
-    $line = ""
-    $output = @()
+    # Build display names with / suffix for dirs, padded for alignment
+    $displayNames = @()
     foreach ($e in $entries) {
-        if (($line + "  $e").Length -gt 80) { $output += $line.TrimStart(); $line = "" }
-        $line += "  $e"
+        $epath = "$target/$e"
+        $ei = Get-LItem $epath
+        $isDir = $ei -and $ei.Type -eq "dir"
+        $displayNames += if ($isDir) { "__DIR__$e/" } else { "__FILE__$e" }
     }
-    if ($line) { $output += $line.TrimStart() }
-    if ($output.Count -eq 0) { return @("") }
+    $colWidth = ($displayNames | ForEach-Object { $_.Length - 7 } | Measure-Object -Maximum).Maximum + 3
+    $termW = $Host.UI.RawUI.WindowSize.Width
+    if ($termW -lt 40) { $termW = 80 }
+    $cols = [Math]::Max(1, [Math]::Floor($termW / $colWidth))
+    $output = @()
+    $row = @()
+    foreach ($d in $displayNames) {
+        $row += $d
+        if ($row.Count -ge $cols) {
+            $output += $row -join ""
+            $row = @()
+        }
+    }
+    if ($row.Count -gt 0) { $output += $row -join "" }
     return $output
 }
 
@@ -734,22 +748,26 @@ Register-LCommand "more" { return & $script:learningCommands["less"] $args }
 # -- man / help --
 Register-LCommand "man" {
     param($args)
-    if ($args.Count -eq 0) { return @("What manual page do you want?") }
-    return @("MAN(1)                          User Commands                          MAN(1)",
-        "",
-        "NAME",
-        "       $($args[0]) - simulated $($args[0]) command",
-        "",
-        "SYNOPSIS",
-        "       $($args[0]) [OPTIONS] [ARGUMENTS]",
-        "",
-        "DESCRIPTION",
-        "       This is a simulated man page for '$($args[0])'.",
-        "       In this learning environment, the command behaves",
-        "       as a realistic simulation.",
-        "",
-        "SEE ALSO",
-        "       .hint, .skip, .check, .status")
+    if ($args.Count -eq 0) { return @("What manual page do you want?", "Usage: man <command>") }
+    $cmd = $args[0].ToLower()
+    $pages = @{
+        "ls"         = @("LS(1) - list directory contents", "SYNOPSIS: ls [OPTION]... [FILE]...", "", "  -l    use long listing format", "  -a    do not ignore entries starting with .", "  -h    human-readable sizes (with -l)", "  -R    list subdirectories recursively", "  -t    sort by modification time", "EXAMPLES:", "  ls -la /etc        list all files with permissions", "  ls -lh /var/log    list with human-readable sizes")
+        "cd"         = @("CD(1) - change directory", "SYNOPSIS: cd [DIR]", "", "  cd ~       go to home directory", "  cd ..      go up one level", "  cd -       go to previous directory", "  cd /etc    go to absolute path")
+        "grep"       = @("GREP(1) - print lines matching a pattern", "SYNOPSIS: grep [OPTIONS] PATTERN [FILE...]", "", "  -r    recursive search", "  -i    case-insensitive", "  -n    show line numbers", "  -v    invert match (show non-matching)", "  -l    show only filenames", "  -c    count matching lines", "EXAMPLES:", "  grep -r 'error' /var/log    search recursively", "  grep -in 'root' /etc/passwd  case-insensitive with line numbers")
+        "chmod"      = @("CHMOD(1) - change file permissions", "SYNOPSIS: chmod [OPTIONS] MODE FILE...", "", "  Numeric: chmod 755 file  (rwxr-xr-x)", "  Symbolic: chmod u+x file  (add execute for user)", "", "  4 = read (r), 2 = write (w), 1 = execute (x)", "  u=user, g=group, o=other, a=all", "EXAMPLES:", "  chmod 644 file.conf    rw-r--r--", "  chmod +x script.sh     add execute bit")
+        "find"       = @("FIND(1) - search for files in a directory hierarchy", "SYNOPSIS: find [PATH] [EXPRESSION]", "", "  -name PATTERN    match filename", "  -type f/d        file or directory", "  -mtime N         modified N days ago", "  -size +1M        larger than 1MB", "  -exec CMD {} ;   execute command on match", "EXAMPLES:", "  find /etc -name '*.conf'        find config files", "  find /var -mtime -1 -type f     files modified today")
+        "tar"        = @("TAR(1) - archive utility", "SYNOPSIS: tar [OPTIONS] [ARCHIVE] [FILES]", "", "  c    create archive", "  x    extract archive", "  z    use gzip compression", "  j    use bzip2 compression", "  v    verbose output", "  f    specify filename", "EXAMPLES:", "  tar -czf backup.tar.gz /etc    create compressed archive", "  tar -xzf backup.tar.gz         extract archive")
+        "systemctl"  = @("SYSTEMCTL(1) - control the systemd system and service manager", "SYNOPSIS: systemctl [OPTIONS] COMMAND [UNIT]", "", "  start/stop/restart/reload UNIT    manage service state", "  enable/disable UNIT               control autostart", "  status UNIT                       show service status", "  list-units                        list all units", "  daemon-reload                     reload unit files")
+        "apt"        = @("APT(8) - Advanced Package Tool", "SYNOPSIS: apt [OPTIONS] COMMAND", "", "  update              update package index", "  upgrade             upgrade installed packages", "  install PKG         install package", "  remove PKG          remove package", "  search TERM         search packages", "  list --installed    list installed packages", "  show PKG            show package details")
+        "ssh"        = @("SSH(1) - OpenSSH remote login client", "SYNOPSIS: ssh [OPTIONS] [USER@]HOST", "", "  -p PORT     connect to specific port", "  -i FILE     identity file (private key)", "  -L PORT     local port forwarding", "  -X          enable X11 forwarding", "EXAMPLES:", "  ssh user@192.168.1.1          basic connection", "  ssh -p 2222 user@server.com   non-standard port")
+        "ps"         = @("PS(1) - report a snapshot of current processes", "SYNOPSIS: ps [OPTIONS]", "", "  aux    show all processes (BSD style)", "  -ef    show all processes (UNIX style)", "  -u     show processes for user", "EXAMPLES:", "  ps aux | grep nginx       find nginx processes", "  ps -ef --forest           show process tree")
+        "ip"         = @("IP(8) - show/manipulate routing, network devices", "SYNOPSIS: ip [OPTIONS] OBJECT COMMAND", "", "  ip addr show              show addresses", "  ip route show             show routing table", "  ip link set eth0 up/down  manage interface", "  ip addr add 192.168.1.1/24 dev eth0  add address")
+    }
+    $header = "$($cmd.ToUpper())(1)" + " " * 20 + "User Commands" + " " * 20 + "$($cmd.ToUpper())(1)"
+    if ($pages.ContainsKey($cmd)) {
+        return @($header, "") + $pages[$cmd] + @("", "(END) - press q or ENTER to continue")
+    }
+    return @($header, "", "NAME", "       $cmd - $cmd command", "", "SYNOPSIS", "       $cmd [OPTIONS] [ARGUMENTS]", "", "DESCRIPTION", "       Simulated man page. Use .hint for task-specific guidance.", "", "(END)")
 }
 
 Register-LCommand "help" {
@@ -1231,11 +1249,47 @@ function Check-CommandMatches {
 # INPUT READER - free typing with backspace support
 # ===================================================================
 
+function Get-TabCompletions {
+    param([string]$Buffer)
+    $knownCmds = @("ls","cd","cat","grep","find","mkdir","rmdir","rm","cp","mv","chmod","chown","pwd","echo","ps","kill","top","df","du","mount","umount","sudo","apt","apt-get","systemctl","service","journalctl","ip","ifconfig","ping","nmap","ssh","scp","curl","wget","tar","zip","unzip","nano","vi","vim","man","which","whoami","uname","hostname","id","groups","useradd","usermod","passwd","docker","kubectl","terraform","aws","git","python","python3","node","npm","mysql","psql","netstat","ss","lsof","iptables","firewall-cmd","sysctl","crontab","pacman","yay","brew","apk","dnf","yum","zypper")
+
+    $parts = $Buffer.TrimStart() -split '\s+'
+    if ($parts.Count -eq 0) { return @() }
+
+    # Command completion (first word)
+    if ($parts.Count -eq 1 -and -not $Buffer.EndsWith(" ")) {
+        $partial = $parts[0]
+        return $knownCmds | Where-Object { $_ -like "$partial*" } | Sort-Object
+    }
+
+    # Path completion (last argument)
+    $lastArg = if ($Buffer.EndsWith(" ")) { "" } else { $parts[-1] }
+    if ($lastArg -like "-*") { return @() }  # flag, skip
+
+    $dirPart = if ($lastArg -match "^(.*/)") { $Matches[1] } else { "" }
+    $filePart = if ($lastArg -match "([^/]*)$") { $Matches[1] } else { $lastArg }
+
+    $targetDir = if ($dirPart) { Resolve-LPath $dirPart } else { $script:learningCwd }
+    $entries = Get-LDirListing $targetDir
+    $candidates = @()
+    foreach ($e in $entries) {
+        $name = Split-Path $e -Leaf
+        if ($name -like "$filePart*") {
+            $ei = Get-LItem $e
+            $suffix = if ($ei -and $ei.Type -eq "dir") { "/" } else { "" }
+            $candidates += "$dirPart$name$suffix"
+        }
+    }
+    return $candidates | Sort-Object
+}
+
 function Read-LearningInput {
     param([string]$PromptLen = "")
     $buffer = ""
     $cursor = 0
     $script:learningHistoryIdx = $script:learningHistory.Count
+    $tabCandidates = @()
+    $tabIdx = -1
 
     function Redraw-Line {
         param([string]$newBuf, [int]$promptX)
@@ -1320,7 +1374,28 @@ function Read-LearningInput {
             Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
             continue
         }
-        if ($k.KeyChar -and $k.KeyChar -ne "`0" -and $k.Key -ne "Tab") {
+        if ($k.Key -eq "Tab") {
+            # Tab completion
+            if ($tabIdx -lt 0 -or $tabCandidates.Count -eq 0) {
+                $tabCandidates = @(Get-TabCompletions $buffer)
+                $tabIdx = 0
+            } else {
+                $tabIdx = ($tabIdx + 1) % $tabCandidates.Count
+            }
+            if ($tabCandidates.Count -gt 0) {
+                $completion = $tabCandidates[$tabIdx]
+                # Replace last word with completion
+                if ($buffer -match "^(.*\s)") { $prefix = $Matches[1] } else { $prefix = "" }
+                $buffer = $prefix + $completion
+                $cursor = $buffer.Length
+                Redraw-Line $buffer $promptX
+                Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
+            }
+            continue
+        }
+        # Any other key resets tab state
+        $tabIdx = -1; $tabCandidates = @()
+        if ($k.KeyChar -and $k.KeyChar -ne "`0") {
             $ch = $k.KeyChar
             $buffer = $buffer.Substring(0, $cursor) + $ch + $buffer.Substring($cursor)
             $cursor++
@@ -1518,11 +1593,34 @@ function Start-LearningSession {
             # Show output
             if ($output.Count -gt 0) {
                 foreach ($line in $output) {
+                    # Colored ls output
+                    if ($line -match "__DIR__|__FILE__") {
+                        $tokens = [regex]::Matches($line, "(__DIR__|__FILE__)(.*?)(?=__DIR__|__FILE__|$)")
+                        foreach ($tok in $tokens) {
+                            $isDir = $tok.Groups[1].Value -eq "__DIR__"
+                            $name = $tok.Groups[2].Value
+                            if ($isDir) {
+                                Write-Host -NoNewline $name.PadRight(14) -ForegroundColor Cyan
+                            } else {
+                                $fc = if ($name -match "\.(sh|py|pl|rb|exe|bin)$") { "Green" } else { "White" }
+                                Write-Host -NoNewline $name.PadRight(14) -ForegroundColor $fc
+                            }
+                        }
+                        Write-Host ""
+                        continue
+                    }
                     $color = "Gray"
                     if ($line -match "^  \[(HINT|SKIP|CHECK|POSTEP)") { $color = "Yellow" }
-                    elseif ($line -match "error|denied|No such file|not found") { $color = "Red" }
-                    elseif ($line -match "drwxr|^-rw") { $color = "Cyan" }
+                    elseif ($line -match "error|failed|denied|No such file|not found|permission" -and $line -notmatch "^\s*#") { $color = "Red" }
+                    elseif ($line -match "^drwxr|^drwx") { $color = "Cyan" }
+                    elseif ($line -match "^-rwx|-r-x") { $color = "Green" }
+                    elseif ($line -match "^-rw") { $color = "White" }
                     elseif ($line -match "^total ") { $color = "DarkGray" }
+                    elseif ($line -match "^\s*#|^;") { $color = "DarkGreen" }
+                    elseif ($line -match "^\[.*\]$") { $color = "Yellow" }
+                    elseif ($line -match "^(Active|Loaded|Main PID|Tasks|Memory|CGroup)" ) { $color = "Cyan" }
+                    elseif ($line -match "running|active|enabled|online|UP" -and $line -notmatch "not ") { $color = "Green" }
+                    elseif ($line -match "stopped|inactive|disabled|DOWN|failed|dead") { $color = "Red" }
                     Write-Host $line -ForegroundColor $color
                 }
                 Write-Host ""

@@ -1,4 +1,4 @@
-function Get-LearningContent-windows {
+﻿function Get-LearningContent-windows {
     param([string]$Difficulty = "beginner")
 
     $fs = @{
@@ -8,7 +8,7 @@ function Get-LearningContent-windows {
                     Desktop = @{ Type = "dir"; Owner = "WIN11-PC\student"; Group = "None"; Children = @{
                         readme_txt = @{ Type = "file"; Owner = "WIN11-PC\student"; Group = "None"; Content = @(
                             "Windows 11 Pro 24H2",
-                            "PowerShell to potężne narzędzie automatyzacji.",
+                            "PowerShell to potezne narzedzie automatyzacji.",
                             "Polecenia: Get-ChildItem (ls), Set-Location (cd), Get-Content (cat)",
                             "Aliasy: dir = ls = Get-ChildItem"
                         )}
