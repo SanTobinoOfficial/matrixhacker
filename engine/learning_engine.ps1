@@ -163,7 +163,12 @@ Register-LCommand "ls" {
         $isDir = $ei -and $ei.Type -eq "dir"
         $displayNames += if ($isDir) { "__DIR__$e/" } else { "__FILE__$e" }
     }
-    $colWidth = ($displayNames | ForEach-Object { $_.Length - 7 } | Measure-Object -Maximum).Maximum + 3
+    # Calculate max actual display name length (strip prefix)
+    $maxName = ($displayNames | ForEach-Object {
+        $prefixLen = if ($_ -like "__DIR__*") { 7 } else { 8 }
+        $_.Length - $prefixLen
+    } | Measure-Object -Maximum).Maximum
+    $colWidth = [Math]::Max(10, $maxName + 2)
     $termW = $Host.UI.RawUI.WindowSize.Width
     if ($termW -lt 40) { $termW = 80 }
     $cols = [Math]::Max(1, [Math]::Floor($termW / $colWidth))
@@ -1086,6 +1091,59 @@ Register-LCommand "clear" {
     return @("__CLEAR__")
 }
 
+Register-LCommand "history" {
+    param($args)
+    $hist = $script:learningHistory
+    if ($hist.Count -eq 0) { return @("(no commands in history)") }
+    $n = if ($args.Count -gt 0 -and $args[0] -match "^\d+$") { [int]$args[0] } else { $hist.Count }
+    $start = [Math]::Max(0, $hist.Count - $n)
+    $output = @()
+    for ($i = $start; $i -lt $hist.Count; $i++) {
+        $output += ("  {0,4}  {1}" -f ($i + 1), $hist[$i])
+    }
+    return $output
+}
+
+Register-LCommand "env" {
+    return @(
+        "HOME=/home/$($script:learningUser)",
+        "USER=$($script:learningUser)",
+        "SHELL=/bin/bash",
+        "TERM=xterm-256color",
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "LANG=en_US.UTF-8",
+        "PWD=$($script:learningCwd)",
+        "HOSTNAME=$($script:learningHost)",
+        "LOGNAME=$($script:learningUser)",
+        "EDITOR=nano",
+        "PAGER=less"
+    )
+}
+
+Register-LCommand "alias" {
+    return @(
+        "alias ll='ls -alF'",
+        "alias la='ls -A'",
+        "alias l='ls -CF'",
+        "alias grep='grep --color=auto'",
+        "alias ls='ls --color=auto'",
+        "alias ..='cd ..'",
+        "alias ...='cd ../..'",
+        "alias h='history'"
+    )
+}
+
+Register-LCommand "printenv" {
+    param($args)
+    if ($args.Count -gt 0) {
+        $env = @{ HOME = "/home/$($script:learningUser)"; USER = $script:learningUser; SHELL = "/bin/bash"; TERM = "xterm-256color"; PATH = "/usr/local/bin:/usr/bin:/bin"; LANG = "en_US.UTF-8"; PWD = $script:learningCwd; HOSTNAME = $script:learningHost }
+        $key = $args[0]
+        if ($env.ContainsKey($key)) { return @($env[$key]) }
+        return @()
+    }
+    return & $script:learningCommands["env"] @()
+}
+
 # ===================================================================
 # COMMAND PARSER
 # ===================================================================
@@ -1445,23 +1503,27 @@ function Start-LearningSession {
     Matrix-Rain -DurationSeconds 3 -Theme $Theme
     Clear-Host
 
-    # Welcome
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     TRYB NAUKI - $SystemName" -ForegroundColor Green
-    Write-Host "     Tryb: interaktywny symulator terminala" -ForegroundColor DarkGray
-    Write-Host "  ========================================" -ForegroundColor Cyan
+    # Welcome screen
+    $w = 55
+    $border = [char]0x2550
+    $tl = [char]0x2554; $tr = [char]0x2557; $bl = [char]0x255A; $br = [char]0x255D
+    $vb = [char]0x2551; $lm = [char]0x2560; $rm = [char]0x2563; $hm = [char]0x2550
     Write-Host ""
-    Write-Host "  Witaj w trybie nauki! Symulujesz sesje terminala" -ForegroundColor Gray
-    Write-Host "  systemu $OsName." -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "  Polecenia specjalne:" -ForegroundColor Yellow
-    Write-Host "    .hint    - podpowiedz" -ForegroundColor DarkYellow
-    Write-Host "    .skip    - pomin zadanie" -ForegroundColor DarkYellow
-    Write-Host "    .check   - sprawdz zadanie" -ForegroundColor DarkYellow
-    Write-Host "    .status  - postep" -ForegroundColor DarkYellow
-    Write-Host "    .exit    - zakoncz" -ForegroundColor DarkYellow
-    Write-Host ""
-    Write-Host "  Masz do wykonania $($Tasks.Count) zadan dla tego systemu." -ForegroundColor Cyan
+    Write-Host "  $tl$([string]$border * $w)$tr" -ForegroundColor $Theme.accent
+    $title = " TRYB NAUKI  |  $SystemName "
+    Write-Host "  $vb$($title.PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $lm$([string]$hm * $w)$rm" -ForegroundColor $Theme.accent
+    $osLine = " System: $OsName"
+    Write-Host "  $vb$($osLine.PadRight($w))$vb" -ForegroundColor DarkGray
+    $taskLine = " Zadania: $($Tasks.Count)  |  Tab: dopelnianie  |  Strzalki: historia"
+    Write-Host "  $vb$($taskLine.PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $lm$([string]$hm * $w)$rm" -ForegroundColor $Theme.accent
+    Write-Host "  $vb$("  .hint   - podpowiedz do biezacego zadania".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .skip   - pomin i przejdz do nastepnego".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .check  - sprawdz postep zadania (scriptblock)".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .status - pokaz postep sesji".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $vb$("  .exit   - zakoncz sesje nauki".PadRight($w))$vb" -ForegroundColor DarkYellow
+    Write-Host "  $bl$([string]$border * $w)$br" -ForegroundColor $Theme.accent
     Write-Host ""
     Write-Host "  Nacisnij ENTER aby rozpoczac..." -ForegroundColor DarkGray
 
@@ -1598,12 +1660,13 @@ function Start-LearningSession {
                         $tokens = [regex]::Matches($line, "(__DIR__|__FILE__)(.*?)(?=__DIR__|__FILE__|$)")
                         foreach ($tok in $tokens) {
                             $isDir = $tok.Groups[1].Value -eq "__DIR__"
-                            $name = $tok.Groups[2].Value
+                            $name = $tok.Groups[2].Value.TrimEnd()
+                            $pad = [Math]::Max(14, $name.Length + 2)
                             if ($isDir) {
-                                Write-Host -NoNewline $name.PadRight(14) -ForegroundColor Cyan
+                                Write-Host -NoNewline $name.PadRight($pad) -ForegroundColor Cyan
                             } else {
-                                $fc = if ($name -match "\.(sh|py|pl|rb|exe|bin)$") { "Green" } else { "White" }
-                                Write-Host -NoNewline $name.PadRight(14) -ForegroundColor $fc
+                                $fc = if ($name -match "\.(sh|py|pl|rb|exe|bin|run)$") { "Green" } elseif ($name -match "\.(conf|cfg|ini|json|yaml|yml|toml)$") { "Yellow" } else { "White" }
+                                Write-Host -NoNewline $name.PadRight($pad) -ForegroundColor $fc
                             }
                         }
                         Write-Host ""
@@ -1630,10 +1693,18 @@ function Start-LearningSession {
             if ($task.ExpectedCommand) {
                 if (Check-CommandMatches $trimmed $task.ExpectedCommand) {
                     $script:learningCompletedTasks[$script:learningCurrentTask] = $true
-                    Write-Host "  + Zadanie $($script:learningCurrentTask + 1) wykonane!" -ForegroundColor Green
+                    $doneNow = $script:learningCompletedTasks.Keys.Count
+                    $totalTasks = $script:learningTasks.Count
+                    Write-Host ""
+                    Write-Host "  $([char]0x250C)$([char]0x2500 * 35)$([char]0x2510)" -ForegroundColor Green
+                    Write-Host "  $([char]0x2502)  $([char]0x2714) POPRAWNIE!  Zadanie $($script:learningCurrentTask + 1)/$totalTasks $(' ' * 12)$([char]0x2502)" -ForegroundColor Green
+                    if (-not $script:learningHintUsed.ContainsKey($script:learningCurrentTask)) {
+                        Write-Host "  $([char]0x2502)  Bez podpowiedzi - doskonale!$(' ' * 7)$([char]0x2502)" -ForegroundColor Cyan
+                    }
+                    Write-Host "  $([char]0x2514)$([char]0x2500 * 35)$([char]0x2518)" -ForegroundColor Green
                     Write-Host ""
                     $script:learningCurrentTask++
-                    Start-Sleep -Milliseconds 400
+                    Start-Sleep -Milliseconds 600
                     Clear-Host
                     break
                 }
@@ -1644,10 +1715,15 @@ function Start-LearningSession {
                 $result = & $task.Check
                 if ($result -eq $true) {
                     $script:learningCompletedTasks[$script:learningCurrentTask] = $true
-                    Write-Host "  + Zadanie $($script:learningCurrentTask + 1) wykonane!" -ForegroundColor Green
+                    $doneNow = $script:learningCompletedTasks.Keys.Count
+                    $totalTasks = $script:learningTasks.Count
+                    Write-Host ""
+                    Write-Host "  $([char]0x250C)$([char]0x2500 * 35)$([char]0x2510)" -ForegroundColor Green
+                    Write-Host "  $([char]0x2502)  $([char]0x2714) POPRAWNIE!  Zadanie $($script:learningCurrentTask + 1)/$totalTasks $(' ' * 12)$([char]0x2502)" -ForegroundColor Green
+                    Write-Host "  $([char]0x2514)$([char]0x2500 * 35)$([char]0x2518)" -ForegroundColor Green
                     Write-Host ""
                     $script:learningCurrentTask++
-                    Start-Sleep -Milliseconds 400
+                    Start-Sleep -Milliseconds 600
                     Clear-Host
                     break
                 }

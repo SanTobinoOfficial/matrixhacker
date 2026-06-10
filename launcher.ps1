@@ -70,12 +70,16 @@ function Show-GuiLauncher {
     Add-Type -AssemblyName System.Drawing
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Ultra Matrix Terminal"
-    $form.Size = New-Object Drawing.Size(820, 670)
+    $form.Text = "Ultra Matrix Terminal v2.0"
+    $form.Size = New-Object Drawing.Size(820, 700)
     $form.StartPosition = "CenterScreen"
-    $form.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
+    $form.BackColor = [Drawing.Color]::FromArgb(8, 8, 8)
     $form.FormBorderStyle = "FixedSingle"
     $form.MaximizeBox = $false
+    $form.KeyPreview = $true
+    $form.Add_KeyDown({
+        if ($_.KeyCode -eq [System.Windows.Forms.Keys]::Escape) { $form.Close() }
+    })
 
     $title = New-Object System.Windows.Forms.Label
     $title.Text = "ULTRA MATRIX TERMINAL"
@@ -114,17 +118,19 @@ function Show-GuiLauncher {
         $themeEntry = $script:Themes[$m.Id]
         $themeColor = if ($themeEntry -and $themeEntry.promptColor) { $themeEntry.promptColor } else { "Gray" }
         $btn = New-Object System.Windows.Forms.Button
-        $btn.Text = "$($m.Name)"
+        $btn.Text = "$($m.Name)`n$($m.Desc)"
         $btn.Tag = $m.Id
-        $btn.Size = New-Object Drawing.Size(240, 55)
+        $btn.Size = New-Object Drawing.Size(240, 60)
         $btn.Location = New-Object Drawing.Point($x, $y)
-        $btn.BackColor = [Drawing.Color]::FromArgb(20, 20, 20)
+        $btn.BackColor = [Drawing.Color]::FromArgb(18, 18, 18)
         $btn.ForeColor = [Drawing.Color]::$themeColor
-        $btn.Font = New-Object Drawing.Font("Consolas", 9, [Drawing.FontStyle]::Bold)
+        $btn.Font = New-Object Drawing.Font("Consolas", 8, [Drawing.FontStyle]::Bold)
         $btn.FlatStyle = "Flat"
-        $btn.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(60, 60, 60)
-        $btn.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(40, 40, 40)
+        $btn.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(50, 50, 50)
+        $btn.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(35, 35, 35)
+        $btn.FlatAppearance.BorderSize = 1
         $btn.Cursor = [Windows.Forms.Cursors]::Hand
+        $btn.TextAlign = "MiddleCenter"
         $btn.Add_Click({
             $script:selectedMode = $this.Tag
             $script:selectedTheme = $script:savedTheme
@@ -134,7 +140,7 @@ function Show-GuiLauncher {
 
         $i++
         $x += 255
-        if ($i % 3 -eq 0) { $x = 25; $y += 70 }
+        if ($i % 3 -eq 0) { $x = 25; $y += 72 }
     }
 
     $ver = New-Object System.Windows.Forms.Label
@@ -144,7 +150,7 @@ function Show-GuiLauncher {
     $ver.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
     $ver.TextAlign = "MiddleCenter"
     $ver.Size = New-Object Drawing.Size(780, 20)
-    $ver.Location = New-Object Drawing.Point(20, 590)
+    $ver.Location = New-Object Drawing.Point(20, 620)
     $form.Controls.Add($ver)
 
     $form.ShowDialog() | Out-Null

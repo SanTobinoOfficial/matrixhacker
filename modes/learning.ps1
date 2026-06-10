@@ -39,58 +39,96 @@ function Build-LEARNINGCOMMANDS {
 function Show-LearningSelector {
     Clear-Host
     $Host.UI.RawUI.BackgroundColor = "Black"
+    $border = [char]0x2550; $tl = [char]0x2554; $tr = [char]0x2557
+    $bl = [char]0x255A; $br = [char]0x255D; $vb = [char]0x2551
+    $lm = [char]0x2560; $rm = [char]0x2563
+    $w = 52
     Write-Host ""
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     TRYB NAUKI - Wybor systemu" -ForegroundColor Green
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host ""
+    Write-Host "  $tl$([string]$border * $w)$tr" -ForegroundColor Cyan
+    Write-Host "  $vb$("  ULTRA MATRIX TERMINAL  |  TRYB NAUKI".PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $vb$("  Wybierz system do nauki".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $lm$([string]$border * $w)$rm" -ForegroundColor Cyan
+
+    $categories = @(
+        @{ Label = "  LINUX DISTROS"; Color = "Green"; Ids = @("ubuntu","debian","centos","arch","kali","alpine","opensuse") }
+        @{ Label = "  WINDOWS"; Color = "Cyan"; Ids = @("windows","winserver") }
+        @{ Label = "  SIECI / SPRZET"; Color = "Yellow"; Ids = @("cisco") }
+        @{ Label = "  MACOS"; Color = "Magenta"; Ids = @("macos") }
+        @{ Label = "  DEVOPS / CLOUD"; Color = "DarkYellow"; Ids = @("docker","cloud","webdev") }
+        @{ Label = "  BAZY DANYCH / IOT / CTF"; Color = "Red"; Ids = @("sql","iot","ctf_mode") }
+    )
     $i = 1
-    foreach ($sys in $learningSystems) {
-        Write-Host "  [$("{0:D2}" -f $i)] $($sys.Name)" -ForegroundColor Yellow
-        $i++
+    $indexMap = @{}
+    foreach ($cat in $categories) {
+        Write-Host "  $vb$($cat.Label.PadRight($w))$vb" -ForegroundColor $cat.Color
+        foreach ($sysId in $cat.Ids) {
+            $sys = $learningSystems | Where-Object { $_.Id -eq $sysId }
+            if ($sys) {
+                $label = "    [{0:D2}] {1}" -f $i, $sys.Name
+                Write-Host "  $vb$($label.PadRight($w))$vb" -ForegroundColor White
+                $indexMap[$i] = $sys
+                $i++
+            }
+        }
     }
+    Write-Host "  $bl$([string]$border * $w)$br" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  [Q] Powrot do menu glownego" -ForegroundColor Red
     Write-Host ""
 
-    $choice = Read-Host "  Wybierz system (1-$($learningSystems.Count))"
+    $choice = Read-Host "  Wybierz system (1-$($i-1))"
     if ($choice -eq 'q' -or $choice -eq 'Q') { return $null }
 
     $num = 0
-    if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $learningSystems.Count) {
-        return $learningSystems[$num - 1]
+    if ([int]::TryParse($choice, [ref]$num) -and $indexMap.ContainsKey($num)) {
+        return $indexMap[$num]
     }
     Write-Host "  Nieprawidlowy wybor." -ForegroundColor Red
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds 400
     return Show-LearningSelector
 }
 
 function Show-DifficultySelector {
     param($SystemInfo)
     Clear-Host
+    $border = [char]0x2550; $tl = [char]0x2554; $tr = [char]0x2557
+    $bl = [char]0x255A; $br = [char]0x255D; $vb = [char]0x2551
+    $lm = [char]0x2560; $rm = [char]0x2563
+    $w = 52
     Write-Host ""
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     $($SystemInfo.Name) - Poziom trudnosci" -ForegroundColor Green
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host ""
+    Write-Host "  $tl$([string]$border * $w)$tr" -ForegroundColor Cyan
+    $header = "  $($SystemInfo.Name)"
+    Write-Host "  $vb$($header.PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $vb$("  Wybierz poziom trudnosci".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $lm$([string]$border * $w)$rm" -ForegroundColor Cyan
+
+    $diffColors = @{ "beginner" = "Green"; "intermediate" = "Yellow"; "advanced" = "DarkYellow"; "expert" = "Red" }
     $i = 1
     foreach ($diff in $learningDifficulties) {
-        Write-Host "  [$i] $($diff.Name) - $($diff.Desc)" -ForegroundColor Yellow
+        $col = if ($diffColors.ContainsKey($diff.Id)) { $diffColors[$diff.Id] } else { "Gray" }
+        $stars = switch ($diff.Id) { "beginner" { "[*   ]" } "intermediate" { "[**  ]" } "advanced" { "[*** ]" } "expert" { "[****]" } default { "[    ]" } }
+        $line = "  [$i] $stars $($diff.Name.PadRight(22)) $($diff.Tasks) zadan"
+        Write-Host "  $vb$($line.PadRight($w))$vb" -ForegroundColor $col
+        $descLine = "      $($diff.Desc)"
+        Write-Host "  $vb$($descLine.PadRight($w))$vb" -ForegroundColor DarkGray
         $i++
     }
+    Write-Host "  $bl$([string]$border * $w)$br" -ForegroundColor Cyan
     Write-Host ""
+    Write-Host "  [A] Wszystkie poziomy (20 zadan)" -ForegroundColor Cyan
     Write-Host "  [Q] Powrot do wyboru systemu" -ForegroundColor Red
     Write-Host ""
 
-    $choice = Read-Host "  Wybierz poziom (1-4)"
+    $choice = Read-Host "  Wybierz poziom (1-4, A, Q)"
     if ($choice -eq 'q' -or $choice -eq 'Q') { return $null }
+    if ($choice -eq 'a' -or $choice -eq 'A') { return @{ Id = "all"; Name = "Wszystkie poziomy"; Tasks = 20 } }
 
     $num = 0
     if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $learningDifficulties.Count) {
         return $learningDifficulties[$num - 1]
     }
     Write-Host "  Nieprawidlowy wybor." -ForegroundColor Red
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds 400
     return Show-DifficultySelector $SystemInfo
 }
 
