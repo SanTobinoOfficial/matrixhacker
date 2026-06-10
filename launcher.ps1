@@ -57,6 +57,11 @@ function Start-Mode {
         return
     }
 
+    if ($Id -eq "screensaver") {
+        Start-Screensaver -Theme (Get-Theme $ThemeId)
+        return
+    }
+
     $theme = Get-Theme $ThemeId
     $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
