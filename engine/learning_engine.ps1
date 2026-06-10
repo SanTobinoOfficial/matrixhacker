@@ -499,28 +499,57 @@ Register-LCommand "kill" {
 # -- grep --
 Register-LCommand "grep" {
     param($args)
-    $recursive = $false; $pattern = ""; $targets = @()
+    $recursive = $false; $caseInsensitive = $false; $showLineNum = $false
+    $invertMatch = $false; $filesOnly = $false; $countOnly = $false
+    $pattern = ""; $targets = @()
     $i = 0
     while ($i -lt $args.Count) {
-        if ($args[$i] -eq "-r" -or $args[$i] -eq "-R") { $recursive = $true; $i++ }
-        elseif ($args[$i] -eq "-i") { $i++ }
-        elseif ($pattern -eq "" -and $args[$i] -notlike "-*") { $pattern = $args[$i]; $i++ }
-        else { $targets += $args[$i]; $i++ }
+        $a = $args[$i]
+        if ($a -match "^-[a-zA-Z]+$") {
+            if ($a -match "r|R") { $recursive = $true }
+            if ($a -match "i") { $caseInsensitive = $true }
+            if ($a -match "n") { $showLineNum = $true }
+            if ($a -match "v") { $invertMatch = $true }
+            if ($a -match "l") { $filesOnly = $true }
+            if ($a -match "c") { $countOnly = $true }
+            $i++
+        } elseif ($pattern -eq "") { $pattern = $a; $i++ }
+        else { $targets += $a; $i++ }
     }
-    if ($pattern -eq "") { return @() }
-    if ($targets.Count -eq 0) { $targets = "." }
+    if ($pattern -eq "") { return @("grep: missing pattern") }
+    if ($targets.Count -eq 0) { $targets = @(".") }
     $results = @()
+    $matchFn = if ($caseInsensitive) { { param($l,$p) $l -imatch $p } } else { { param($l,$p) $l -cmatch $p } }
     foreach ($t in $targets) {
         $path = Resolve-LPath $t; $item = Get-LItem $path
-        if (-not $item) { continue }
-        if ($item.Type -eq "file" -and $item.Content) {
-            foreach ($line in $item.Content) { if ($line -match $pattern) { $results += "$($t):$line" } }
-        } elseif ($item.Type -eq "dir") {
-            $files = if ($recursive) { Get-LDirRecursive $path } else { Get-LDirListing $path }
-            foreach ($f in $files) { $fi = Get-LItem $f; if ($fi -and $fi.Type -eq "file" -and $fi.Content) { foreach ($line in $fi.Content) { if ($line -match $pattern) { $results += "$($f):$line" } } } }
+        if (-not $item) { $results += "grep: ${t}: No such file or directory"; continue }
+        $filesToSearch = @()
+        if ($item.Type -eq "file") { $filesToSearch = @($path) }
+        elseif ($item.Type -eq "dir") {
+            $filesToSearch = if ($recursive) { Get-LDirRecursive $path } else { Get-LDirListing $path }
+            $filesToSearch = $filesToSearch | Where-Object { $fi = Get-LItem $_; $fi -and $fi.Type -eq "file" }
+        }
+        foreach ($fp in $filesToSearch) {
+            $fi = Get-LItem $fp
+            if (-not $fi -or -not $fi.Content) { continue }
+            $lineNum = 0; $matchCount = 0
+            foreach ($line in $fi.Content) {
+                $lineNum++
+                $matched = & $matchFn $line $pattern
+                $show = if ($invertMatch) { -not $matched } else { $matched }
+                if ($show) {
+                    $matchCount++
+                    if (-not $filesOnly -and -not $countOnly) {
+                        $prefix = if ($targets.Count -gt 1 -or $item.Type -eq "dir") { "${fp}:" } else { "" }
+                        $numPrefix = if ($showLineNum) { "${lineNum}:" } else { "" }
+                        $results += "$prefix$numPrefix$line"
+                    }
+                }
+            }
+            if ($filesOnly -and $matchCount -gt 0) { $results += $fp }
+            if ($countOnly) { $results += "${fp}:$matchCount" }
         }
     }
-    if ($results.Count -eq 0) { return @() }
     return $results
 }
 
@@ -777,17 +806,21 @@ Register-LCommand "man" {
 
 Register-LCommand "help" {
     param($args)
-    return @("Available commands: ls, cd, cat, head, tail, touch, mkdir, rm, cp, mv,",
-        "echo, whoami, hostname, id, uname, date, cal, df, du, free, ps, kill,",
-        "grep, find, chmod, sudo, systemctl, journalctl, ping, ip, ifconfig,",
-        "wget, curl, sort, uniq, wc, tar, which, less, more, man, help, clear, pwd",
+    return @(
+        "  FILESYSTEM     ls, cd, pwd, cat, head, tail, touch, mkdir, rm, cp, mv, find",
+        "  SYSTEM         ps, kill, top, df, du, free, uname, uptime, who, w, id",
+        "  NETWORK        ping, ip, ifconfig, ss, netstat, lsof, nmap, wget, curl",
+        "  TEXT           grep, sort, uniq, wc, echo, less, more, tar, chmod, chown",
+        "  INFO           whoami, hostname, date, cal, history, env, alias, neofetch",
+        "  SERVICES       systemctl, journalctl, sudo, lsblk",
+        "  PACKAGES       apt, dnf, pacman, zypper, apk, brew",
+        "  MANUAL         man <cmd>   (try: man ls, man grep, man chmod)",
+        "  DEVOPS         docker, kubectl, terraform, mysql",
+        "  SECURITY       nmap, searchsploit, hydra, sqlmap, john, hashcat",
         "",
-        "Tools: nmap, searchsploit, gobuster, hydra, msfconsole, john, hashcat,",
-        "sqlmap, wpscan, nikto, mysql, docker, kubectl, terraform",
-        "",
-        "Package managers: apt, dnf, pacman, zypper, apk, brew",
-        "",
-        "Special commands: .hint, .skip, .check, .status, .exit")
+        "  SPECIALS       .hint  .skip  .check  .status  .exit",
+        "  TIPS           Tab: path/cmd completion   Up/Down: history   Ctrl+C: cancel"
+    )
 }
 
 # -- apt (Debian/Ubuntu) --
@@ -1144,6 +1177,105 @@ Register-LCommand "printenv" {
     return & $script:learningCommands["env"] @()
 }
 
+Register-LCommand "uptime" {
+    $h = Get-Random -Minimum 1 -Maximum 72
+    $m = Get-Random -Minimum 0 -Maximum 59
+    $users = Get-Random -Minimum 1 -Maximum 4
+    $l1 = [Math]::Round((Get-Random -Minimum 5 -Maximum 25) / 10.0, 2)
+    $l5 = [Math]::Round((Get-Random -Minimum 3 -Maximum 20) / 10.0, 2)
+    $l15 = [Math]::Round((Get-Random -Minimum 2 -Maximum 15) / 10.0, 2)
+    return @(" $(Get-Date -Format 'HH:mm:ss') up $h`:$($m.ToString('D2')),  $users user$(if($users -gt 1){'s'}),  load average: $l1, $l5, $l15")
+}
+
+Register-LCommand "lsblk" {
+    return @(
+        "NAME   MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "sda      8:0    0   100G  0 disk",
+        "|-sda1   8:1    0     1G  0 part /boot",
+        "|-sda2   8:2    0    99G  0 part",
+        "  `-lvm  253:0  0    99G  0 lvm  /",
+        "sdb      8:16   0   500G  0 disk",
+        "`-sdb1   8:17   0   500G  0 part /mnt/backup",
+        "sr0     11:0    1  1024M  0 rom"
+    )
+}
+
+Register-LCommand "ss" {
+    param($args)
+    $header = "Netid  State   Recv-Q  Send-Q  Local Address:Port    Peer Address:Port"
+    if ($args -match "-t" -or $args -match "tcp") {
+        return @($header,
+            "tcp    LISTEN  0       128     0.0.0.0:22           0.0.0.0:*",
+            "tcp    LISTEN  0       511     0.0.0.0:80           0.0.0.0:*",
+            "tcp    LISTEN  0       511     0.0.0.0:443          0.0.0.0:*",
+            "tcp    ESTAB   0       0       192.168.1.10:22      192.168.1.5:54321")
+    }
+    return @($header,
+        "tcp    LISTEN  0       128     0.0.0.0:22           0.0.0.0:*",
+        "tcp    LISTEN  0       511     0.0.0.0:80           0.0.0.0:*",
+        "udp    UNCONN  0       0       0.0.0.0:68           0.0.0.0:*")
+}
+
+Register-LCommand "netstat" {
+    param($args)
+    return & $script:learningCommands["ss"] $args
+}
+
+Register-LCommand "lsof" {
+    return @(
+        "COMMAND   PID     USER   FD   TYPE DEVICE NODE NAME",
+        "systemd     1     root  cwd    DIR    8,1    2 /",
+        "sshd      854     root    3u  IPv4  18234    0 *:22",
+        "nginx    1203  www-data   6u  IPv4  22411    0 *:80",
+        "nginx    1203  www-data   7u  IPv4  22412    0 *:443",
+        "mysql    1450    mysql   14u  IPv4  24100    0 *:3306"
+    )
+}
+
+Register-LCommand "neofetch" {
+    $os = $script:learningOsName
+    $host = $script:learningHost
+    $user = $script:learningUser
+    $kernel = "6.8.0-45-generic"
+    $upH = Get-Random -Minimum 1 -Maximum 48
+    $upM = Get-Random -Minimum 0 -Maximum 59
+    $pkgs = Get-Random -Minimum 800 -Maximum 2200
+    $shell = "bash 5.2.21"
+    $cpu = "Intel Core i7-12700K (16) @ 5.000GHz"
+    $mem = "$([Math]::Round((Get-Random -Min 2000 -Max 6000)/1000.0, 1))GiB / 16.0GiB"
+    return @(
+        "        #####       $user@$host",
+        "       #######      ---------------",
+        "       ##O#O##      OS: $os",
+        "       #######      Host: VirtualMachine 1.0",
+        "     ###########    Kernel: $kernel",
+        "    #############   Uptime: ${upH}h ${upM}m",
+        "   ###############  Packages: $pkgs (dpkg)",
+        "   ###############  Shell: $shell",
+        "    #############   Terminal: xterm-256color",
+        "      #########     CPU: $cpu",
+        "                    Memory: $mem",
+        ""
+    )
+}
+
+Register-LCommand "w" {
+    $user = $script:learningUser
+    $h = Get-Random -Minimum 1 -Maximum 24
+    $m = Get-Random -Minimum 0 -Maximum 59
+    return @(
+        " $(Get-Date -Format 'HH:mm:ss') up ${h}:$($m.ToString('D2')),  1 user,  load average: 0.12, 0.08, 0.05",
+        "USER     TTY      FROM             LOGIN@   IDLE JCPU   PCPU WHAT",
+        "$($user.PadRight(8)) pts/0    192.168.1.5      $(Get-Date -Format 'HH:mm')   0.00s  0.12s  0.01s -bash"
+    )
+}
+
+Register-LCommand "who" {
+    param($args)
+    if ($args -match "-b") { return @("         system boot  $(Get-Date (Get-Date).AddDays(-(Get-Random -Min 1 -Max 30)) -Format 'yyyy-MM-dd HH:mm')") }
+    return @("$($script:learningUser)   pts/0   $(Get-Date -Format 'yyyy-MM-dd HH:mm') (192.168.1.5)")
+}
+
 # ===================================================================
 # COMMAND PARSER
 # ===================================================================
@@ -1309,15 +1441,25 @@ function Check-CommandMatches {
 
 function Get-TabCompletions {
     param([string]$Buffer)
-    $knownCmds = @("ls","cd","cat","grep","find","mkdir","rmdir","rm","cp","mv","chmod","chown","pwd","echo","ps","kill","top","df","du","mount","umount","sudo","apt","apt-get","systemctl","service","journalctl","ip","ifconfig","ping","nmap","ssh","scp","curl","wget","tar","zip","unzip","nano","vi","vim","man","which","whoami","uname","hostname","id","groups","useradd","usermod","passwd","docker","kubectl","terraform","aws","git","python","python3","node","npm","mysql","psql","netstat","ss","lsof","iptables","firewall-cmd","sysctl","crontab","pacman","yay","brew","apk","dnf","yum","zypper")
+    $knownCmds = @("ls","cd","cat","grep","find","mkdir","rmdir","rm","cp","mv","chmod","chown","pwd","echo","ps","kill","top","df","du","mount","umount","sudo","apt","apt-get","systemctl","service","journalctl","ip","ifconfig","ping","nmap","ssh","scp","curl","wget","tar","zip","unzip","nano","vi","vim","man","which","whoami","uname","hostname","id","groups","useradd","usermod","passwd","docker","kubectl","terraform","aws","git","python","python3","node","npm","mysql","psql","netstat","ss","lsof","iptables","firewall-cmd","sysctl","crontab","pacman","yay","brew","apk","dnf","yum","zypper","history","env","alias","printenv","uptime","lsblk","neofetch","w","who","lsof","free","date","cal","wc","sort","uniq","head","tail","less","more","help","clear","touch","which","tar","alias")
+    $specialCmds = @(".hint",".skip",".check",".status",".exit")
 
     $parts = $Buffer.TrimStart() -split '\s+'
     if ($parts.Count -eq 0) { return @() }
 
+    # Special command completion
+    if ($parts.Count -eq 1 -and $parts[0] -like ".*") {
+        $partial = $parts[0]
+        return $specialCmds | Where-Object { $_ -like "$partial*" } | Sort-Object
+    }
+
     # Command completion (first word)
     if ($parts.Count -eq 1 -and -not $Buffer.EndsWith(" ")) {
         $partial = $parts[0]
-        return $knownCmds | Where-Object { $_ -like "$partial*" } | Sort-Object
+        # Also complete from registered commands
+        $registered = $script:learningCommands.Keys | Sort-Object
+        $all = ($knownCmds + $registered) | Sort-Object -Unique
+        return $all | Where-Object { $_ -like "$partial*" } | Sort-Object
     }
 
     # Path completion (last argument)

@@ -186,24 +186,44 @@ function Show-CliLauncher {
     $platform = Get-Platform
     $Host.UI.RawUI.BackgroundColor = "Black"
     Clear-Host
-    Write-Host "========================================" -ForegroundColor Cyan
-    Write-Host "   ULTRA MATRIX TERMINAL" -ForegroundColor Green
-    Write-Host "   $platform" -ForegroundColor DarkGray
-    Write-Host "   Theme: $((Get-Theme $script:savedTheme).name)" -ForegroundColor (Get-Theme $script:savedTheme).promptColor
-    Write-Host "========================================" -ForegroundColor Cyan
+
+    $currentTheme = Get-Theme $script:savedTheme
+    $tc = $currentTheme.promptColor
+    $border = [char]0x2550; $tl = [char]0x2554; $tr = [char]0x2557
+    $bl = [char]0x255A; $br = [char]0x255D; $vb = [char]0x2551
+    $lm = [char]0x2560; $rm = [char]0x2563; $w = 60
+
     Write-Host ""
-    $i = 1
-    foreach ($m in $modes) {
-        $num = "$i".PadLeft(2)
-        Write-Host "  [$num] $($m.Name)" -ForegroundColor Yellow
-        Write-Host "        $($m.Desc)" -ForegroundColor Gray
-        $i++
+    Write-Host "  $tl$([string]$border * $w)$tr" -ForegroundColor Cyan
+    Write-Host "  $vb$("  ULTRA MATRIX TERMINAL  v2.0".PadRight($w))$vb" -ForegroundColor Green
+    Write-Host "  $vb$("  $platform  |  Theme: $($currentTheme.name)".PadRight($w))$vb" -ForegroundColor $tc
+    Write-Host "  $lm$([string]$border * $w)$rm" -ForegroundColor Cyan
+
+    # Category groups
+    $groups = @(
+        @{ Label = "  ENTERTAINMENT"; Color = "Green"; Ids = @("realistic","hollywood","cyberpunk","matrix","mrrobot") }
+        @{ Label = "  SCENARIOS"; Color = "Yellow"; Ids = @("outage","pentest","sysadmin","heist") }
+        @{ Label = "  ATMOSPHERE"; Color = "Magenta"; Ids = @("horror","polska","darkweb","ctf_mode") }
+        @{ Label = "  SPECIALS"; Color = "Cyan"; Ids = @("screensaver","tutorial","learning") }
+    )
+    $modeMap2 = @{}
+    foreach ($m in $modes) { $modeMap2[$m.Id] = $m }
+    $idx = 1
+    foreach ($grp in $groups) {
+        Write-Host "  $vb$($grp.Label.PadRight($w))$vb" -ForegroundColor $grp.Color
+        foreach ($id in $grp.Ids) {
+            $m = $modeMap2[$id]
+            if (-not $m) { continue }
+            $line = "    [{0:D2}] {1,-22} {2}" -f $idx, $m.Name, $m.Desc
+            Write-Host "  $vb$($line.PadRight($w))$vb" -ForegroundColor White
+            $idx++
+        }
     }
+    Write-Host "  $lm$([string]$border * $w)$rm" -ForegroundColor Cyan
+    Write-Host "  $vb$("  [T] Zmien theme   [Q] Wyjdz".PadRight($w))$vb" -ForegroundColor DarkGray
+    Write-Host "  $bl$([string]$border * $w)$br" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  [T] Zmien theme" -ForegroundColor Magenta
-    Write-Host "  [Q] Quit" -ForegroundColor Red
-    Write-Host ""
-    $choice = Read-Host "Select mode (1-$($modes.Length))"
+    $choice = Read-Host "  Wybierz tryb (1-$($modes.Length))"
 
     if ($choice -eq 'q' -or $choice -eq 'Q') { return }
     if ($choice -eq 't' -or $choice -eq 'T') {
@@ -217,13 +237,17 @@ function Show-CliLauncher {
         return
     }
 
+    # Build ordered list matching the display order
+    $orderedIds = @()
+    foreach ($grp in $groups) { foreach ($id in $grp.Ids) { if ($modeMap2[$id]) { $orderedIds += $id } } }
     $num = 0
-    if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $modes.Length) {
-        $mode = $modes[$num - 1]
-        Start-Mode $mode.Id $script:savedTheme
+    if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $orderedIds.Count) {
+        Start-Mode $orderedIds[$num - 1] $script:savedTheme
+    } elseif ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $modes.Length) {
+        Start-Mode $modes[$num - 1].Id $script:savedTheme
     } else {
-        Write-Host "Invalid choice." -ForegroundColor Red
-        Start-Sleep -Milliseconds 500
+        Write-Host "  Nieprawidlowy wybor." -ForegroundColor Red
+        Start-Sleep -Milliseconds 400
         Show-CliLauncher $modes
     }
 }
