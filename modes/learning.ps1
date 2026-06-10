@@ -17,6 +17,12 @@ $learningSystems = @(
     @{ Id = "winserver"; Name = "Windows Server 2022"; Prompt = "PS C:\Users\Admin>"; Hostname = "SRV-DC01"; User = "Admin"; OsName = "Windows Server 2022 Standard" }
     @{ Id = "cisco"; Name = "Cisco IOS"; Prompt = "Router>"; Hostname = "Router"; User = ""; OsName = "Cisco IOS XE 17.9" }
     @{ Id = "macos"; Name = "macOS Terminal"; Prompt = "student@macbook:~$"; Hostname = "macbook"; User = "student"; OsName = "macOS 15 Sequoia" }
+    @{ Id = "ctf_mode"; Name = "CTF Challenge Mode"; Prompt = "player@ctf-box:~$"; Hostname = "ctf-box"; User = "player"; OsName = "CTF Challenge Lab 2026" }
+    @{ Id = "docker"; Name = "Docker Admin"; Prompt = "admin@docker-host:~$"; Hostname = "docker-host"; User = "admin"; OsName = "Ubuntu 24.04 LTS (Docker Host)" }
+    @{ Id = "cloud"; Name = "Cloud DevOps"; Prompt = "devops@cloud-box:~$"; Hostname = "cloud-box"; User = "devops"; OsName = "Cloud Workstation 24.04" }
+    @{ Id = "webdev"; Name = "Web Developer"; Prompt = "dev@dev-machine:~$"; Hostname = "dev-machine"; User = "dev"; OsName = "Ubuntu 24.04 LTS (Dev Machine)" }
+    @{ Id = "sql"; Name = "SQL Database Admin"; Prompt = "dba@db-server:~$"; Hostname = "db-server"; User = "dba"; OsName = "Ubuntu 24.04 LTS (Database Server)" }
+    @{ Id = "iot"; Name = "IoT Hacker"; Prompt = "hacker@iot-device:~$"; Hostname = "iot-device"; User = "hacker"; OsName = "OpenWrt 23.05.3 (Embedded)" }
 )
 
 $learningDifficulties = @(
@@ -89,9 +95,10 @@ function Show-DifficultySelector {
 }
 
 function Start-LearningMode {
-    param([string]$SystemId, [string]$Difficulty)
+    param([string]$SystemId, [string]$Difficulty, [string]$ThemeId)
 
-    $theme = Get-Theme "learning"
+    if (-not $ThemeId) { $ThemeId = "learning" }
+    $theme = Get-Theme $ThemeId
     $sysInfo = $learningSystems | Where-Object { $_.Id -eq $SystemId }
     if (-not $sysInfo) { Write-Host "Unknown system: $SystemId" -ForegroundColor Red; return }
 

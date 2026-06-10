@@ -275,6 +275,328 @@ $script:Themes = @{
             "ZADANIE: WPROWADZ POLEGENIE"
         )
     }
+    ctf_mode = @{
+        name = "CTF Challenge"
+        id = "ctf_mode"
+        matrixStyle = "cyberpunk"
+        promptColor = "DarkYellow"
+        matrixHead = "White"
+        matrixBright = "DarkYellow"
+        matrixBody = "DarkYellow"
+        matrixTail = "DarkGray"
+        accent = "Green"
+        errorColor = "Red"
+        briefColor = "DarkYellow"
+        chars = "CTF{}0123456789ABCDEFabcdef<>-_"
+        overlayMsgs = @(
+            "FLAG: CTF{...}", "CHALLENGE SOLVED", "FLAG CAPTURED",
+            "REVERSING: SUCCESS", "EXPLOIT: WORKING", "PRIVESC: ROOT"
+        )
+    }
+    ubuntu = @{
+        name = "Ubuntu Server"
+        id = "ubuntu"
+        matrixStyle = "matrix"
+        promptColor = "Yellow"
+        matrixHead = "White"
+        matrixBright = "Yellow"
+        matrixBody = "DarkYellow"
+        matrixTail = "DarkGray"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkGray"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*+="
+        overlayMsgs = @(
+            "APT: PACKAGES UPDATED", "NGINX: RELOADED",
+            "SERVICE: ACTIVE (RUNNING)", "CERTBOT: CERTIFICATE RENEWED",
+            "UFW: RULE ADDED"
+        )
+    }
+    debian = @{
+        name = "Debian GNU/Linux"
+        id = "debian"
+        matrixStyle = "matrix"
+        promptColor = "Red"
+        matrixHead = "White"
+        matrixBright = "Red"
+        matrixBody = "DarkRed"
+        matrixTail = "DarkGray"
+        accent = "Cyan"
+        errorColor = "Yellow"
+        briefColor = "DarkGray"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*+="
+        overlayMsgs = @(
+            "DEBIAN: STABLE RELEASE", "APT-GET: INSTALLED",
+            "DPKG: PACKAGE CONFIGURED", "SYSTEM: UPDATED",
+            "POSTGRESQL: ACCEPTING CONNECTIONS"
+        )
+    }
+    centos = @{
+        name = "Rocky Enterprise"
+        id = "centos"
+        matrixStyle = "matrix"
+        promptColor = "Blue"
+        matrixHead = "White"
+        matrixBright = "Blue"
+        matrixBody = "DarkBlue"
+        matrixTail = "DarkGray"
+        accent = "Yellow"
+        errorColor = "Red"
+        briefColor = "DarkBlue"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        overlayMsgs = @(
+            "DNF: UPDATE COMPLETE", "SELINUX: ENFORCING",
+            "FIREWALLD: RULE ACTIVE", "HTTPD: VIRTUAL HOST ADDED",
+            "RHEL: SUBSCRIPTION VALID"
+        )
+    }
+    arch = @{
+        name = "Arch Linux"
+        id = "arch"
+        matrixStyle = "cyberpunk"
+        promptColor = "Cyan"
+        matrixHead = "White"
+        matrixBright = "Cyan"
+        matrixBody = "DarkCyan"
+        matrixTail = "DarkGray"
+        accent = "Magenta"
+        errorColor = "Red"
+        briefColor = "DarkCyan"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>-_+"
+        overlayMsgs = @(
+            "PACMAN: -Syu COMPLETE", "AUR: PACKAGE BUILD OK",
+            "KERNEL: LINUX-ZEN BOOTED", "MAKEPKG: COMPILED",
+            "SYSTEMD: BOOT TARGET REACHED"
+        )
+    }
+    kali = @{
+        name = "Kali Linux"
+        id = "kali"
+        matrixStyle = "cyberpunk"
+        promptColor = "Blue"
+        matrixHead = "White"
+        matrixBright = "Blue"
+        matrixBody = "DarkBlue"
+        matrixTail = "DarkGray"
+        accent = "Red"
+        errorColor = "Red"
+        briefColor = "DarkBlue"
+        chars = "0123456789ABCDEF<>-+*/=%#&|_~"
+        overlayMsgs = @(
+            "NMAP: HOST DISCOVERED", "METASPLOIT: SESSION OPENED",
+            "HASHCAT: CRACKED", "PRIVESC: ROOT SHELL",
+            "PERSISTENCE: ESTABLISHED"
+        )
+    }
+    alpine = @{
+        name = "Alpine Linux"
+        id = "alpine"
+        matrixStyle = "matrix"
+        promptColor = "DarkCyan"
+        matrixHead = "White"
+        matrixBright = "DarkCyan"
+        matrixBody = "DarkGreen"
+        matrixTail = "Black"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkGreen"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        overlayMsgs = @(
+            "APK: PACKAGE INSTALLED", "OPENRC: SERVICE STARTED",
+            "BUSYBOX: BUILT-IN", "ALPINE: SMALL FOOTPRINT",
+            "INIT: RUNLEVEL 3"
+        )
+    }
+    opensuse = @{
+        name = "openSUSE Tumbleweed"
+        id = "opensuse"
+        matrixStyle = "matrix"
+        promptColor = "Green"
+        matrixHead = "White"
+        matrixBright = "Green"
+        matrixBody = "DarkGreen"
+        matrixTail = "DarkGray"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkGreen"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        overlayMsgs = @(
+            "ZYPPER: REPOSITORY REFRESHED", "SNAPPER: SNAPSHOT CREATED",
+            "YAST: MODULE LOADED", "TUMBLEWEED: ROLLING UPDATE",
+            "FIREWALL: ZONE ACTIVE"
+        )
+    }
+    windows = @{
+        name = "Windows 11"
+        id = "windows"
+        matrixStyle = "cyberpunk"
+        promptColor = "Cyan"
+        matrixHead = "White"
+        matrixBright = "Cyan"
+        matrixBody = "Blue"
+        matrixTail = "DarkBlue"
+        accent = "Yellow"
+        errorColor = "Red"
+        briefColor = "DarkCyan"
+        chars = "PS0123456789ABCDEF<>-_/"
+        overlayMsgs = @(
+            "POWERSHELL: MODULE LOADED", "GET-SERVICE: RUNNING",
+            "EVENT LOG: QUERIED", "SCHEDULED TASK: TRIGGERED",
+            "WMI: NAMESPACE ENUMERATED"
+        )
+    }
+    winserver = @{
+        name = "Windows Server"
+        id = "winserver"
+        matrixStyle = "cyberpunk"
+        promptColor = "Blue"
+        matrixHead = "White"
+        matrixBright = "Blue"
+        matrixBody = "DarkBlue"
+        matrixTail = "DarkGray"
+        accent = "Yellow"
+        errorColor = "Red"
+        briefColor = "DarkBlue"
+        chars = "PS0123456789ABCDEF<>-_/"
+        overlayMsgs = @(
+            "AD DS: DOMAIN CONTROLLER SYNCED", "DNS: ZONE TRANSFER OK",
+            "GPO: POLICY APPLIED", "HYPER-V: VM STATE RUNNING",
+            "DHCPSCOPE: 85% UTILIZED"
+        )
+    }
+    cisco = @{
+        name = "Cisco IOS"
+        id = "cisco"
+        matrixStyle = "matrix"
+        promptColor = "DarkYellow"
+        matrixHead = "White"
+        matrixBright = "Yellow"
+        matrixBody = "DarkYellow"
+        matrixTail = "DarkGray"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkYellow"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#<>"
+        overlayMsgs = @(
+            "OSPF: ADJACENCY ESTABLISHED", "VLAN: TRUNK CONFIGURED",
+            "BGP: ROUTE LEARNED", "ACL: APPLIED TO INTERFACE",
+            "EIGRP: NEIGHBOR TABLE UPDATED"
+        )
+    }
+    macos = @{
+        name = "macOS Terminal"
+        id = "macos"
+        matrixStyle = "matrix"
+        promptColor = "Gray"
+        matrixHead = "White"
+        matrixBright = "Gray"
+        matrixBody = "DarkGray"
+        matrixTail = "Black"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkGray"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        overlayMsgs = @(
+            "BREW: PACKAGE INSTALLED", "LAUNCHD: SERVICE LOADED",
+            "PLIST: PROPERTY LIST PARSED", "CODESIGN: VALIDATED",
+            "ZSH: COMPLETION LOADED"
+        )
+    }
+    docker = @{
+        name = "Docker Admin"
+        id = "docker"
+        matrixStyle = "cyberpunk"
+        promptColor = "Cyan"
+        matrixHead = "White"
+        matrixBright = "Cyan"
+        matrixBody = "Blue"
+        matrixTail = "DarkBlue"
+        accent = "Yellow"
+        errorColor = "Red"
+        briefColor = "DarkBlue"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        overlayMsgs = @(
+            "CONTAINER: RUNNING", "IMAGE: PULLED SUCCESSFULLY",
+            "DOCKER-COMPOSE: UP", "VOLUME: MOUNTED",
+            "NETWORK: BRIDGE CREATED"
+        )
+    }
+    sql = @{
+        name = "SQL Database"
+        id = "sql"
+        matrixStyle = "matrix"
+        promptColor = "Yellow"
+        matrixHead = "White"
+        matrixBright = "Yellow"
+        matrixBody = "DarkYellow"
+        matrixTail = "DarkGray"
+        accent = "Green"
+        errorColor = "Red"
+        briefColor = "DarkYellow"
+        chars = "SELECT*FROM0123456789ABCDEF<>-_"
+        overlayMsgs = @(
+            "QUERY: 42 ROWS RETURNED", "INDEX: REBUILT",
+            "BACKUP: COMPLETED", "TRANSACTION: COMMITTED",
+            "REPLICATION: LAG 0 SECONDS"
+        )
+    }
+    webdev = @{
+        name = "Web Developer"
+        id = "webdev"
+        matrixStyle = "neon"
+        promptColor = "Green"
+        matrixHead = "White"
+        matrixBright = "Green"
+        matrixBody = "DarkGreen"
+        matrixTail = "DarkGray"
+        accent = "Magenta"
+        errorColor = "Red"
+        briefColor = "DarkGreen"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789<>/_."
+        overlayMsgs = @(
+            "NPM: DEPENDENCIES INSTALLED", "BUILD: SUCCESSFUL",
+            "GIT: PUSHED TO MAIN", "DEV SERVER: HOT RELOAD",
+            "DEPLOY: LIVE"
+        )
+    }
+    cloud = @{
+        name = "Cloud DevOps"
+        id = "cloud"
+        matrixStyle = "cyberpunk"
+        promptColor = "Magenta"
+        matrixHead = "White"
+        matrixBright = "Magenta"
+        matrixBody = "DarkMagenta"
+        matrixTail = "DarkGray"
+        accent = "Cyan"
+        errorColor = "Red"
+        briefColor = "DarkMagenta"
+        chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
+        overlayMsgs = @(
+            "KUBECTL: POD RUNNING", "TERRAFORM: APPLY COMPLETE",
+            "CI/CD: PIPELINE GREEN", "CLUSTER: AUTOSCALING",
+            "S3: SYNC COMPLETE"
+        )
+    }
+    iot = @{
+        name = "IoT Hacker"
+        id = "iot"
+        matrixStyle = "cyberpunk"
+        promptColor = "DarkGreen"
+        matrixHead = "White"
+        matrixBright = "Green"
+        matrixBody = "DarkGreen"
+        matrixTail = "DarkGray"
+        accent = "Red"
+        errorColor = "Red"
+        briefColor = "DarkGreen"
+        chars = "0123456789ABCDEF<>-_/.#"
+        overlayMsgs = @(
+            "FIRMWARE: EXTRACTED", "UART: CONSOLE ACCESS",
+            "MQTT: TOPIC SUBSCRIBED", "GPIO: PIN TOGGLED",
+            "SHELL: ROOT ON DEVICE"
+        )
+    }
 }
 
 function Get-Theme {

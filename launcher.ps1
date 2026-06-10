@@ -1,6 +1,7 @@
 param(
     [switch]$CLI,
     [string]$Mode,
+    [string]$Theme,
     [switch]$Help
 )
 
@@ -9,10 +10,14 @@ $scriptPath = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path $MyInvocati
 . "$scriptPath/engine/themes.ps1"
 . "$scriptPath/engine/helpers.ps1"
 . "$scriptPath/engine/platform.ps1"
+. "$scriptPath/engine/settings.ps1"
 . "$scriptPath/engine/core.ps1"
 . "$scriptPath/engine/learning_engine.ps1"
 
-Get-ChildItem "$scriptPath/modes" -Filter *.ps1 -Recurse | ForEach-Object { . $_.FullName }
+$userSettings = Get-Settings
+$script:savedTheme = if ($Theme) { $Theme } else { $userSettings.theme }
+
+Get-ChildItem "$scriptPath/modes" -Filter *.ps1 | ForEach-Object { . $_.FullName }
 
 $modes = @(
     @{ Id = "realistic"; Name = "Realistic Terminal"; Desc = "Authentic Linux terminal session" }
@@ -30,29 +35,29 @@ $modes = @(
     @{ Id = "darkweb"; Name = "Dark Web"; Desc = "Navigate the darknet" }
     @{ Id = "ctf_mode"; Name = "CTF Challenge"; Desc = "Find the hidden flag" }
     @{ Id = "screensaver"; Name = "Matrix Screensaver"; Desc = "Infinite Matrix rain" }
-    @{ Id = "learning"; Name = "Tryb Nauki"; Desc = "Interaktywny symulator terminala (11 systemow)" }
+    @{ Id = "learning"; Name = "Tryb Nauki"; Desc = "Interaktywny symulator terminala (17 systemow)" }
 )
 
 $modeMap = @{}
 foreach ($m in $modes) { $modeMap[$m.Id] = $m }
 
 function Start-Mode {
-    param([string]$Id)
+    param([string]$Id, [string]$ThemeId)
     $mode = $modeMap[$Id]
     if (-not $mode) { Write-Host "Error: unknown mode '$Id'" -ForegroundColor Red; return }
+    if (-not $ThemeId) { $ThemeId = $script:savedTheme }
 
     if ($Id -eq "learning") {
         $sys = Show-LearningSelector
         if ($sys) {
             $diff = Show-DifficultySelector $sys
-            if ($diff) {
-                Start-LearningMode -SystemId $sys.Id -Difficulty $diff.Id
-            }
+            if ($diff) { Start-LearningMode -SystemId $sys.Id -Difficulty $diff.Id -ThemeId $ThemeId }
+            elseif ($sys) { Start-LearningMode -SystemId $sys.Id -ThemeId $ThemeId }
         }
         return
     }
 
-    $theme = Get-Theme $Id
+    $theme = Get-Theme $ThemeId
     $funcName = "Build-$($Id.ToUpper())COMMANDS"
     $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
     if (-not $func) { Write-Host "Error: mode function $funcName not found" -ForegroundColor Red; return }
@@ -66,7 +71,7 @@ function Show-GuiLauncher {
 
     $form = New-Object System.Windows.Forms.Form
     $form.Text = "Ultra Matrix Terminal"
-    $form.Size = New-Object Drawing.Size(820, 620)
+    $form.Size = New-Object Drawing.Size(820, 670)
     $form.StartPosition = "CenterScreen"
     $form.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
     $form.FormBorderStyle = "FixedSingle"
@@ -82,14 +87,26 @@ function Show-GuiLauncher {
     $title.Location = New-Object Drawing.Point(20, 15)
     $form.Controls.Add($title)
 
+    $currentTheme = Get-Theme $script:savedTheme
+
+    $themeLabel = New-Object System.Windows.Forms.Label
+    $themeLabel.Text = "Theme: $($currentTheme.name)"
+    $themeLabel.Font = New-Object Drawing.Font("Consolas", 9)
+    $themeLabel.ForeColor = [Drawing.Color]::FromName($currentTheme.promptColor)
+    $themeLabel.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
+    $themeLabel.TextAlign = "MiddleLeft"
+    $themeLabel.Size = New-Object Drawing.Size(200, 25)
+    $themeLabel.Location = New-Object Drawing.Point(25, 55)
+    $form.Controls.Add($themeLabel)
+
     $sub = New-Object System.Windows.Forms.Label
-    $sub.Text = "Select a terminal mode to launch"
+    $sub.Text = "Select a mode to launch"
     $sub.Font = New-Object Drawing.Font("Consolas", 10)
     $sub.ForeColor = [Drawing.Color]::Gray
     $sub.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
-    $sub.TextAlign = "MiddleCenter"
-    $sub.Size = New-Object Drawing.Size(780, 25)
-    $sub.Location = New-Object Drawing.Point(20, 55)
+    $sub.TextAlign = "MiddleLeft"
+    $sub.Size = New-Object Drawing.Size(300, 25)
+    $sub.Location = New-Object Drawing.Point(230, 55)
     $form.Controls.Add($sub)
 
     $x = 25; $y = 95; $i = 0
@@ -107,7 +124,11 @@ function Show-GuiLauncher {
         $btn.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(40, 40, 40)
         $btn.Cursor = [Windows.Forms.Cursors]::Hand
         $id = $m.Id
-        $btn.Add_Click({ Start-Mode $id })
+        $btn.Add_Click({
+            $script:selectedMode = $id
+            $script:selectedTheme = $script:savedTheme
+            $form.Close()
+        })
         $form.Controls.Add($btn)
 
         $i++
@@ -116,16 +137,40 @@ function Show-GuiLauncher {
     }
 
     $ver = New-Object System.Windows.Forms.Label
-    $ver.Text = "v2.0 | Escape to exit any session | github.com/SanTobinoOfficial/matrixhacker"
+    $ver.Text = "v2.0 | Escape to exit | github.com/SanTobinoOfficial/matrixhacker"
     $ver.Font = New-Object Drawing.Font("Consolas", 8)
     $ver.ForeColor = [Drawing.Color]::DarkGray
     $ver.BackColor = [Drawing.Color]::FromArgb(10, 10, 10)
     $ver.TextAlign = "MiddleCenter"
     $ver.Size = New-Object Drawing.Size(780, 20)
-    $ver.Location = New-Object Drawing.Point(20, 540)
+    $ver.Location = New-Object Drawing.Point(20, 590)
     $form.Controls.Add($ver)
 
     $form.ShowDialog() | Out-Null
+}
+
+function Show-ThemeSelector {
+    param([array]$Themes, [string]$CurrentId)
+    Write-Host "  --- Wybierz theme (kolory terminala) ---" -ForegroundColor Cyan
+    $themeList = @()
+    $idx = 0
+    foreach ($t in $Themes) { $themeList += $t; $idx++ }
+    $tnum = 1
+    foreach ($t in $themeList) {
+        $mark = if ($t.id -eq $CurrentId) { " <--" } else { "" }
+        Write-Host "  [$("{0:D2}" -f $tnum)] $($t.name)$mark" -ForegroundColor $t.promptColor
+        $tnum++
+    }
+    Write-Host ""
+    Write-Host "  [Q] Nie zmieniaj" -ForegroundColor Red
+    Write-Host ""
+    $tchoice = Read-Host "Wybierz theme (1-$($themeList.Count))"
+    if ($tchoice -eq 'q' -or $tchoice -eq 'Q') { return $CurrentId }
+    $tnum = 0
+    if ([int]::TryParse($tchoice, [ref]$tnum) -and $tnum -ge 1 -and $tnum -le $themeList.Count) {
+        return $themeList[$tnum - 1].id
+    }
+    return $CurrentId
 }
 
 function Show-CliLauncher {
@@ -137,6 +182,7 @@ function Show-CliLauncher {
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host "   ULTRA MATRIX TERMINAL" -ForegroundColor Green
     Write-Host "   $platform" -ForegroundColor DarkGray
+    Write-Host "   Theme: $((Get-Theme $script:savedTheme).name)" -ForegroundColor (Get-Theme $script:savedTheme).promptColor
     Write-Host "========================================" -ForegroundColor Cyan
     Write-Host ""
     $i = 1
@@ -147,28 +193,27 @@ function Show-CliLauncher {
         $i++
     }
     Write-Host ""
+    Write-Host "  [T] Zmien theme" -ForegroundColor Magenta
     Write-Host "  [Q] Quit" -ForegroundColor Red
     Write-Host ""
     $choice = Read-Host "Select mode (1-$($modes.Length))"
 
     if ($choice -eq 'q' -or $choice -eq 'Q') { return }
+    if ($choice -eq 't' -or $choice -eq 'T') {
+        $allThemes = Get-AllThemes
+        $newTheme = Show-ThemeSelector $allThemes $script:savedTheme
+        if ($newTheme -ne $script:savedTheme) {
+            Set-Setting "theme" $newTheme
+            $script:savedTheme = $newTheme
+        }
+        Show-CliLauncher $modes
+        return
+    }
 
     $num = 0
     if ([int]::TryParse($choice, [ref]$num) -and $num -ge 1 -and $num -le $modes.Length) {
         $mode = $modes[$num - 1]
-        if ($mode.Id -eq "learning") {
-            $sys = Show-LearningSelector
-            if ($sys) {
-                $diff = Show-DifficultySelector $sys
-                if ($diff) { Start-LearningMode -SystemId $sys.Id -Difficulty $diff.Id }
-            }
-            return
-        }
-        $theme = Get-Theme $mode.Id
-        $funcName = "Build-$($mode.Id.ToUpper())COMMANDS"
-        $func = Get-Item -LiteralPath "function:$funcName" -ErrorAction SilentlyContinue
-        if (-not $func) { Write-Host "Error: mode function not found: $funcName" -ForegroundColor Red; return }
-        Start-TerminalSession -CommandBuilder ([scriptblock]::Create($funcName)) -Theme $theme -ModeName $mode.Name
+        Start-Mode $mode.Id $script:savedTheme
     } else {
         Write-Host "Invalid choice." -ForegroundColor Red
         Start-Sleep -Milliseconds 500
@@ -181,22 +226,33 @@ if ($Help) {
     Write-Host "USAGE: .\launcher.ps1 [options]" -ForegroundColor Gray
     Write-Host "  -CLI           Launch in CLI mode (no GUI)" -ForegroundColor Gray
     Write-Host "  -Mode <id>     Launch mode directly by ID" -ForegroundColor Gray
+    Write-Host "  -Theme <id>    Use specific theme (default: saved in settings)" -ForegroundColor Gray
     Write-Host "  -Help          Show this help" -ForegroundColor Gray
     Write-Host ""
     Write-Host "Available modes:" -ForegroundColor Yellow
     foreach ($m in $modes) { Write-Host "  $($m.Id.PadRight(14)) $($m.Name)" -ForegroundColor Green }
+    Write-Host ""
+    Write-Host "Available themes:" -ForegroundColor Yellow
+    $allThemes = Get-AllThemes
+    foreach ($t in $allThemes) { Write-Host "  $($t.id.PadRight(20)) $($t.name)" -ForegroundColor $t.promptColor }
     return
 }
 
 if ($Mode) {
     if (-not $modeMap.ContainsKey($Mode)) { Write-Host "Unknown mode: $Mode" -ForegroundColor Red; return }
-    Start-Mode $Mode
+    Start-Mode $Mode $script:savedTheme
     return
 }
 
 $platform = Get-Platform
 if (-not $CLI -and $platform -eq "Windows") {
-    try { Show-GuiLauncher $modes; return } catch { }
+    $script:selectedMode = $null
+    $script:selectedTheme = $script:savedTheme
+    try { Show-GuiLauncher $modes } catch { }
+    if ($script:selectedMode) {
+        Start-Mode $script:selectedMode $script:selectedTheme
+    }
+    return
 }
 
 Show-CliLauncher $modes

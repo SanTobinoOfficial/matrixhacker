@@ -560,7 +560,7 @@ Register-LCommand "systemctl" {
     if ($action -eq "status") {
         return @("● ${service}.service - $service server daemon",
             "     Loaded: loaded (/lib/systemd/system/${service}.service; enabled; preset: enabled)",
-            "     Active: active (running) since $(Get-Date -Format 'ddd YYYY-MM-dd HH:mm:ss') UTC; 2 days ago",
+            "     Active: active (running) since $(Get-Date -Format 'ddd yyyy-MM-dd HH:mm:ss') UTC; 2 days ago",
             "   Main PID: 1245 (${service})",
             "      Tasks: 5 (limit: 2231)",
             "     Memory: 12.3M",
@@ -757,7 +757,308 @@ Register-LCommand "help" {
         "grep, find, chmod, sudo, systemctl, journalctl, ping, ip, ifconfig,",
         "wget, curl, sort, uniq, wc, tar, which, less, more, man, help, clear, pwd",
         "",
+        "Tools: nmap, searchsploit, gobuster, hydra, msfconsole, john, hashcat,",
+        "sqlmap, wpscan, nikto, mysql, docker, kubectl, terraform",
+        "",
+        "Package managers: apt, dnf, pacman, zypper, apk, brew",
+        "",
         "Special commands: .hint, .skip, .check, .status, .exit")
+}
+
+# -- apt (Debian/Ubuntu) --
+Register-LCommand "apt" {
+    param($args)
+    if ($args.Count -eq 0) { return @("apt $($args -join ' ')") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^(install|remove|purge)\s') { return @("Reading package lists... Done", "Building dependency tree... Done", "Reading state information... Done", "$cmd completed successfully.") }
+    if ($cmd -match '^update') { return @("Hit:1 http://archive.ubuntu.com/ubuntu jammy InRelease", "Hit:2 http://security.ubuntu.com/ubuntu jammy-security InRelease", "Fetched 0 B in 1s (0 B/s)", "Reading package lists... Done") }
+    if ($cmd -match '^upgrade') { return @("Reading package lists... Done", "Building dependency tree... Done", "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.") }
+    if ($cmd -match '^(search|list)\s') { return @("Listing... Done") }
+    if ($cmd -match '^(show|info)\s') { return @("Package: $($Matches[0])", "Version: 2.0.1", "Priority: optional", "Section: utils", "Maintainer: Ubuntu Developers", "Description: simulated package") }
+    return @("apt: $cmd")
+}
+Register-LCommand "apt-get" { return & $script:learningCommands["apt"] $args }
+Register-LCommand "apt-cache" { return @("apt-cache: command simulated") }
+
+# -- dnf (CentOS/Rocky) --
+Register-LCommand "dnf" {
+    param($args)
+    if ($args.Count -eq 0) { return @("dnf $($args -join ' ')") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^(install|remove|erase)\s') { return @("Last metadata expiration check: 0:05:23 ago.", "Package installed successfully.") }
+    if ($cmd -match '^update') { return @("Last metadata expiration check: 0:05:23 ago.", "Dependencies resolved.", "Nothing to do.") }
+    if ($cmd -match '^list') { return @("Installed Packages: coreutils.x86_64 8.32-30.el9") }
+    if ($cmd -match '^(search|info)\s') { return @("Last metadata expiration check: 0:05:23 ago.", "Name: $($Matches[0])") }
+    return @("dnf: $cmd")
+}
+Register-LCommand "yum" { return & $script:learningCommands["dnf"] $args }
+
+# -- pacman (Arch) --
+Register-LCommand "pacman" {
+    param($args)
+    if ($args.Count -eq 0) { return @("usage: pacman <operation> [...]") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^-Syu') { return @(":: Synchronizing package databases...", " core is up to date", " extra is up to date", " community is up to date", ":: Starting full system upgrade...", " there is nothing to do") }
+    if ($cmd -match '^-S\s') { return @("resolving dependencies...", "looking for conflicting packages...", "Packages: ($($Matches[0]))", "Total Installed Size:  1.23 MiB", ":: Proceed with installation? [Y/n]", "Y", "(1/1) checking keys in keyring", "(1/1) installing $($Matches[0])") }
+    if ($cmd -match '^-R(s|n)?s?\s') { return @("checking dependencies...", "Packages: ($($Matches[0]))", ":: Do you want to remove these packages? [Y/n]", "Y", "(1/1) removing $($Matches[0])") }
+    if ($cmd -match '^-Q') { return @("coreutils 9.0-1", "glibc 2.36-2") }
+    return @("pacman: $cmd")
+}
+
+# -- zypper (openSUSE) --
+Register-LCommand "zypper" {
+    param($args)
+    if ($args.Count -eq 0) { return @("zypper $($args -join ' ')") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^(in|install)\s') { return @("Loading repository data...", "Reading installed packages...", "Resolving package dependencies...", "The following NEW package is going to be installed:", "  $($Matches[0])", "Overall download size: 1.2 MiB", "Continue? [y/n/v/...? shows all options] (y): y") }
+    if ($cmd -match '^(up|update)') { return @("Loading repository data...", "Reading installed packages...", "Nothing to do.") }
+    if ($cmd -match '^(se|search)\s') { return @("Loading repository data...", "Reading installed packages...", "S | Name | Summary | Type", "--+------+---------+-----", "  | $($Matches[0]) | simulated | package") }
+    if ($cmd -match '^(lr|repos)') { return @("# | Alias | Name | Enabled | GPG Check | Refresh", "--+-------+------+---------+-----------+--------", "1 | repo-oss | openSUSE-oss | Yes | p g | Yes") }
+    return @("zypper: $cmd")
+}
+
+# -- apk (Alpine) --
+Register-LCommand "apk" {
+    param($args)
+    if ($args.Count -eq 0) { return @("apk $($args -join ' ')") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^(add|del)\s') { return @("(1/1) Installing $($Matches[0])", "OK: 42 MiB in 84 packages") }
+    if ($cmd -match '^update') { return @("fetch https://dl-cdn.alpinelinux.org/alpine/v3.18/main/x86_64/APKINDEX.tar.gz", "OK: 15848 distinct packages available") }
+    if ($cmd -match '^upgrade') { return @("Upgrading... Done.", "OK: 42 MiB in 84 packages") }
+    if ($cmd -match '^(search|info)\s') { return @("$($Matches[0])-2.0.1-r0 - simulated package description") }
+    return @("apk: $cmd")
+}
+
+# -- brew (macOS) --
+Register-LCommand "brew" {
+    param($args)
+    if ($args.Count -eq 0) { return @("Homebrew $('v' + (Get-Random -Max 5).ToString() + '.' + (Get-Random -Max 10).ToString())") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^(install|reinstall)\s') { return @("==> Downloading https://ghcr.io/v2/homebrew/core/$($Matches[0])", "==> Pouring $($Matches[0])-1.0.arm64_ventura.bottle.tar.gz", "  /usr/local/Cellar/$($Matches[0]): 42 files, 1.2MB") }
+    if ($cmd -match '^(upgrade|update)') { return @("Already up-to-date.") }
+    if ($cmd -match '^(search|info)\s') { return @("$($Matches[0]): stable 1.0 (bottled)", "Simulated package manager for macOS") }
+    if ($cmd -match '^list') { return @("coreutils", "findutils", "gnu-sed", "wget", "curl") }
+    if ($cmd -match '^doctor') { return @("Your system is ready to brew.") }
+    return @("brew: $cmd")
+}
+
+# -- nmap --
+Register-LCommand "nmap" {
+    param($args)
+    $target = if ($args[-1] -and $args[-1] -notmatch '^-') { $args[-1] } else { "scanme.org" }
+    if ($args -match '-h|--help') { return @("Nmap 7.94SVN ( https://nmap.org )", "Usage: nmap [Scan Type(s)] [Options] {target specification}") }
+    if ($args -match '-O') { return @("Starting Nmap 7.94SVN ( https://nmap.org ) at $(Get-Date -Format 'yyyy-MM-dd HH:mm')", "Nmap scan report for $target (192.168.1.1)", "Host is up (0.042s latency).", "Not shown: 995 closed tcp ports (reset)", "PORT     STATE    SERVICE     VERSION", "22/tcp   open     OpenSSH    9.0p1", "80/tcp   open     Apache     httpd 2.4.57", "443/tcp  open     Apache     httpd 2.4.57", "3306/tcp filtered MySQL", "8080/tcp open     Apache     httpd 2.4.57", "Aggressive OS guesses: Linux 5.x (95%), Linux 6.x (90%)", "OS detection performed. Please report any incorrect results.", "Nmap done: 1 IP address (1 host up) scanned in 13.42 seconds") }
+    return @("Starting Nmap 7.94SVN ( https://nmap.org ) at $(Get-Date -Format 'yyyy-MM-dd HH:mm')", "Nmap scan report for $target", "Host is up (0.042s latency).", "Not shown: 997 closed tcp ports (reset)", "PORT     STATE    SERVICE", "22/tcp   open     ssh", "80/tcp   open     http", "443/tcp  open     https", "8080/tcp open     http-proxy", "MAC Address: 08:00:27:AB:CD:EF (Oracle VB)", "Nmap done: 1 IP address (1 host up) scanned in 5.67 seconds")
+}
+
+# -- searchsploit --
+Register-LCommand "searchsploit" {
+    param($args)
+    if ($args.Count -eq 0) { return @("searchsploit 2.0", "Usage: searchsploit [term1] [term2] ...") }
+    $q = "$($args -join ' ')"
+    $results = @("Exploit Title | Path", "--------------|------")
+    $results += "Linux Kernel 5.x - Privilege Escalation | exploits/linux/local/50922.c"
+    $results += "Apache httpd 2.4.49 - Path Traversal | exploits/linux/remote/50581.py"
+    $results += "OpenSSH 8.9 - User Enumeration | exploits/linux/remote/50977.sh"
+    $results += "MySQL 8.0 - Authentication Bypass | exploits/linux/remote/50859.py"
+    $results += "WordPress 6.0 - SQL Injection | exploits/php/webapps/50789.txt"
+    $results += "nginx 1.25 - Heap Overflow | exploits/linux/dos/50901.c"
+    return $results
+}
+
+# -- gobuster --
+Register-LCommand "gobuster" {
+    param($args)
+    $url = if ($args -match '-u\s+(\S+)') { $Matches[1] } else { "http://target.com" }
+    $wordlist = if ($args -match '-w\s+(\S+)') { $Matches[1] } else { "/usr/share/wordlists/dirb/common.txt" }
+    return @("===============================================================", "Gobuster v3.6 by OJ Reeves (@TheColonial)", "===============================================================", "[+] Url:         $url", "[+] Method:      GET", "[+] Threads:     10", "[+] Wordlist:    $wordlist", "[+] Timeout:     10s", "===============================================================", "$(Get-Date -Format 'yyyy/MM/dd HH:mm:ss') Starting gobuster", "===============================================================", "/admin                (Status: 200) [Size: 8421]", "/backup               (Status: 200) [Size: 14523]", "/config               (Status: 403) [Size: 199]", "/login                (Status: 200) [Size: 5430]", "/uploads              (Status: 200) [Size: 98]", "===============================================================", "$(Get-Date -Format 'yyyy/MM/dd HH:mm:ss') Finished", "===============================================================")
+}
+
+# -- hydra --
+Register-LCommand "hydra" {
+    param($args)
+    $target = if ($args[-1] -and $args[-1] -notmatch '^-') { $args[-1] } else { "10.0.0.1" }
+    $service = "ssh"
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        if ($args[$i] -match '^-') { if ($args[$i + 1]) { $service = $args[$i + 1] }; break }
+    }
+    $passwords = @("admin", "root", "password123", "letmein", "12345678", "qwerty")
+    $results = @(
+        "Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak",
+        "Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
+        "[DATA] max 16 tasks per 1 server, overall 16 tasks, 6 login tries, ~6 tries per task",
+        "[DATA] attacking ${service}://${target}/:22/",
+        "[22][$service] host: $target   login: root   password: $($passwords[(Get-Random -Max $passwords.Length)])",
+        "1 of 1 target successfully completed, 1 valid password found",
+        "Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    )
+    return $results
+}
+
+# -- msfconsole --
+Register-LCommand "msfconsole" {
+    param($args)
+    return @("", "         =[ metasploit v6.3.36-dev                          ]", "+ -- --=[ 2349 exploits - 1247 auxiliary - 422 post       ]", "+ -- --=[ 1458 payloads - 47 encoders - 11 nops           ]", "+ -- --=[ 9 evasion                                       ]", "", "Metasploit Documentation: https://docs.metasploit.com/", "", "msf6 > ")
+}
+
+# -- john / hashcat --
+Register-LCommand "john" {
+    param($args)
+    $hashtype = "raw-sha256"
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        if ($args[$i] -match '^--format=') { $hashtype = $args[$i] -replace '^--format=' }
+    }
+    return @("Created directory: /home/user/.john", "Using default input encoding: UTF-8", "Loaded 1 password hash ($hashtype, 256 bits)", "Will run 4 OpenMP threads", "Proceeding with single, rules:Single", "Press Ctrl-C to abort, or send SIGUSR1 to john process for status", "p@ssw0rd        (?)", "1g 0:00:00:01 DONE 1/3 (2023-01-01 12:00) 1.000g/s 682.0p/s 682.0c/s 682.0C/s", "Session completed.")
+}
+Register-LCommand "hashcat" {
+    param($args)
+    $mode = "1400"
+    for ($i = 0; $i -lt $args.Count; $i++) {
+        if ($args[$i] -match '^-m') { if ($args[$i + 1]) { $mode = $args[$i + 1] } }
+    }
+    return @("hashcat (v6.2.6) starting in attack mode", "", "OpenCL API (OpenCL 3.0) - Platform #1 [GPU]", "Minimum password length: 8", "Maximum password length: 64", "", "Session..........: hashcat", "Status...........: Running", "Hash.Mode........: $mode (SHA256)", "Speed.#1.........: 14235.0 kH/s", "Progress.........: 1048576/4294967296 (0.02%)", "Candidates.#1....: p@ssw0rd -> 12345678", "Guess.Base.......: /usr/share/wordlists/rockyou.txt")
+}
+
+# -- sqlmap --
+Register-LCommand "sqlmap" {
+    param($args)
+    $url = if ($args -match '-u\s+"?([^"\s]+)"?') { $Matches[1] } else { if ($args -match '-u\s+(\S+)') { $Matches[1] } else { "http://test.com?id=1" } }
+    return @(
+        "        __",
+        "       __H__",
+        " ___ ___[,]_____ ___ ___  {1.7.8#stable}",
+        "|_ -| . [,]     | '| . |",
+        "|___|_  [.]_|_|_|__,|  _|",
+        "      |_|V...       |_|   https://sqlmap.org",
+        "",
+        "[!] legal disclaimer: Usage of sqlmap for attacking...",
+        "[*] starting @ $(Get-Date -Format 'HH:mm:ss')",
+        "",
+        "[dd:mm:ss] [INFO] testing connection to the target URL",
+        "[dd:mm:ss] [INFO] testing 'Boolean-based blind' parameter 'id' (1)",
+        "[dd:mm:ss] [INFO] testing 'Error-based' parameter 'id' (2)",
+        "[dd:mm:ss] [INFO] testing 'Stacked queries' parameter 'id' (2)",
+        "[dd:mm:ss] [INFO] GET parameter 'id' is 'MySQL >= 5.0.12' injectable",
+        "[dd:mm:ss] [INFO] fetching database names",
+        "[dd:mm:ss] [INFO] retrieved: information_schema, mysql, wordpress",
+        "[dd:mm:ss] [INFO] the back-end DBMS is MySQL",
+        "web server operating system: Linux Ubuntu",
+        "web application technology: Apache 2.4.57, PHP 8.1",
+        "back-end DBMS: MySQL >= 5.0.12",
+        "available databases [3]:",
+        "[*] information_schema",
+        "[*] mysql",
+        "[*] wordpress"
+    )
+}
+
+# -- wpscan --
+Register-LCommand "wpscan" {
+    param($args)
+    $url = if ($args[-1] -and $args[-1] -notmatch '^-') { $args[-1] } else { if ($args -match '-u\s+(\S+)') { $Matches[1] } else { "http://wordpress-site.com" } }
+    return @(
+        "_______________________________________________________________",
+        "       __          _______   _____",
+        "      \\ \\        / /  __ \\ / ____|",
+        "       \\ \\  /\\  / /| |__) | (___",
+        "        \\ \\/  \\/ / |  ___/ \\___ \\",
+        "         \\  /\\  /  | |     ____) |",
+        "          \\/  \\/   |_|    |_____/",
+        "         WordPress Security Scanner",
+        "",
+        "WPScan v3.8.25 (https://wpscan.com/)",
+        "[+] URL: $url",
+        "[+] Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')",
+        "",
+        "[i] The WordPress version is outdated (6.2.1 -> 6.3.2)",
+        "[i] Detected 2 vulnerabilities:",
+        "[i]  SQL Injection (CVE-2023-XXXX) - critical",
+        "[i]  XSS (CVE-2023-YYYY) - medium",
+        "",
+        "[+] Enumerating users (via author ID)...",
+        "[i] User(s) identified: admin, editor, wp_user",
+        "",
+        "[+] Enumerating plugins...",
+        "[i]  contact-form-7 (5.7.7) - outdated",
+        "[i]  woocommerce (7.8.0) - 1 vulnerability identified"
+    )
+}
+
+# -- nikto --
+Register-LCommand "nikto" {
+    param($args)
+    $host = if ($args -match '-h\s+(\S+)') { $Matches[1] } else { "127.0.0.1" }
+    return @(
+        "- Nikto v2.5.0",
+        "---------------------------------------------------------------------------",
+        "+ Target IP:          $host",
+        "+ Target Hostname:    $host",
+        "---------------------------------------------------------------------------",
+        "- Server: Apache/2.4.57",
+        "+ /: Server banner: Apache/2.4.57 (Ubuntu).",
+        "+ /: The anti-clickjacking X-Frame-Options header is not present.",
+        "+ /wp-admin/: WordPress admin login page found.",
+        "+ /phpinfo.php: PHP info file found.",
+        "+ /server-status: Apache server-status interface found (403 Forbidden).",
+        "+ /backup/: Directory listing found (sensitive data?).",
+        "+ 5 hosts: 0 new since last scan",
+        "+ 2 authenticated hosts",
+        "---------------------------------------------------------------------------",
+        "1 host(s) tested"
+    )
+}
+
+# -- kubectl --
+Register-LCommand "kubectl" {
+    param($args)
+    if ($args.Count -eq 0) { return @("kubectl controls the Kubernetes cluster manager.", "", "Basic Commands (Beginner):", "  create        Create a resource", "  expose        Expose a resource", "  run           Run a particular image", "  set           Set specific features on objects", "", "Usage: kubectl [command] [TYPE] [NAME] [flags]") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^get pods') { return @("NAME              READY   STATUS    RESTARTS   AGE", "nginx-deploy-1    1/1     Running   0          42h", "api-server-0      1/1     Running   0          42h", "redis-cache-2     0/1     CrashLoopBackOff  3          5m", "db-stateful-0     1/1     Running   0          42h") }
+    if ($cmd -match '^get nodes') { return @("NAME              STATUS   ROLES           AGE   VERSION", "control-plane     Ready    control-plane   42h   v1.28.2", "worker-1          Ready    worker          42h   v1.28.2", "worker-2          Ready    worker          42h   v1.28.2") }
+    if ($cmd -match '^get services') { return @("NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE", "kubernetes       ClusterIP   10.96.0.1       <none>        443/TCP        42h", "nginx-service    ClusterIP   10.96.42.1      <none>        80/TCP         42h", "api-service      NodePort    10.96.42.100    <none>        80:30080/TCP   42h") }
+    if ($cmd -match '^get (deploy|deployment)') { return @("NAME              READY   UP-TO-DATE   AVAILABLE   AGE", "nginx-deploy      3/3     3            3           42h", "api-server        1/1     1            1           42h") }
+    if ($cmd -match '^logs\s+(\S+)') { return @("Starting up on port 8080...", "Connection from 10.1.0.1:54231", "GET /api/status 200 5ms", "Connection from 10.1.0.2:54232", "GET /api/data 200 12ms") }
+    if ($cmd -match '^describe\s+pod\s+(\S+)') { return @("Name:             $($Matches[0])", "Namespace:        default", "Node:             worker-1/10.0.0.2", "Status:           Running", "IP:               10.42.0.5", "Containers:", "  Container ID:   docker://abc123", "  Image:          nginx:latest", "  State:          Running (started 42h ago)", "Conditions:", "  Type              Status", "  Initialized       True", "  Ready             True", "  ContainersReady   True", "  PodScheduled      True") }
+    if ($cmd -match '^cluster-info') { return @("Kubernetes control plane is running at https://10.0.0.1:6443", "CoreDNS is running at https://10.0.0.1:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy") }
+    return @("kubectl $cmd")
+}
+
+# -- docker --
+Register-LCommand "docker" {
+    param($args)
+    if ($args.Count -eq 0) { return @("Usage: docker [OPTIONS] COMMAND", "", "Common Commands:", "  run     Create and run a new container", "  exec    Execute a command in a running container", "  ps      List containers", "  images  List Docker images", "  pull    Pull an image from a registry", "  start   Start one or more stopped containers") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^ps') { return @("CONTAINER ID   IMAGE          COMMAND                  CREATED       STATUS       PORTS                  NAMES", 'abc123def456   nginx:latest   "/docker-entrypoint.sh"   2 hours ago   Up 2 hours   0.0.0.0:80->80/tcp    web-server', 'def789abc012   postgres:15    "docker-entrypoint.sh"   3 hours ago   Up 3 hours   0.0.0.0:5432->5432/tcp db', 'ghi345jkl678   redis:7        "docker-entrypoint.sh"   4 hours ago   Up 4 hours   0.0.0.0:6379->6379/tcp cache') }
+    if ($cmd -match '^images') { return @("REPOSITORY     TAG       IMAGE ID       CREATED        SIZE", "nginx          latest    abc123456789   2 weeks ago    187MB", "postgres       15        def789012345   3 weeks ago    413MB", "redis          7         ghi345678901   4 weeks ago    117MB", "alpine         latest    123abc456def   2 months ago   7.05MB") }
+    if ($cmd -match '^pull\s+(\S+)') { return @("Using default tag: latest", "latest: Pulling from $($Matches[0])", "abc123def456: Pull complete", "def456abc789: Pull complete", "ghi789abc012: Pull complete", "Digest: sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890", "Status: Downloaded newer image for $($Matches[0]):latest") }
+    if ($cmd -match '^run\s+.*') { return @("Unable to find image 'busybox:latest' locally", "busybox:latest: Pulling from library/busybox", "abc123def456: Pull complete", "Digest: sha256:abcdef...", "Status: Downloaded newer image for busybox:latest") }
+    if ($cmd -match '^exec\s+.*') { return @("") }
+    if ($cmd -match '^logs\s+(\S+)') { return @("2024-01-15 12:00:01 Server started", "2024-01-15 12:00:02 Listening on port 80", "2024-01-15 12:00:03 Connection from 10.0.0.1") }
+    if ($cmd -match '^(compose|stack)') { return @("docker compose: simulated") }
+    if ($cmd -match '^(network|volume)') { return @("$($Matches[0]): simulated operation completed") }
+    return @("docker $cmd")
+}
+
+# -- terraform --
+Register-LCommand "terraform" {
+    param($args)
+    if ($args.Count -eq 0) { return @("Usage: terraform [global options] <subcommand> [args]", "", "Common commands:", "  init          Initialize a Terraform working directory", "  plan          Generate and show an execution plan", "  apply         Build or change infrastructure", "  destroy       Destroy Terraform-managed infrastructure") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^init') { return @("Initializing the backend...", "Initializing provider plugins...", '- Finding hashicorp/aws versions matching "~> 5.0"...', "- Installing hashicorp/aws v5.17.0...", "- Installed hashicorp/aws v5.17.0 (signed by HashiCorp)", "", "Terraform has been successfully initialized!") }
+    if ($cmd -match '^plan') { return @("Terraform used the selected providers to generate the following execution plan.", "Resource actions are indicated with the following symbols:", "  + create", "", "Terraform will perform the following actions:", "", "# aws_instance.web will be created", '  + resource "aws_instance" "web" {', '      + ami           = "ami-0c55b159cbfafe1f0"', '      + instance_type = "t2.micro"', '      + tags          = {', '          + Name = "web-server"', "        }", "    }", "", "Plan: 1 to add, 0 to change, 0 to destroy.") }
+    if ($cmd -match '^apply') { return @("aws_instance.web: Creating...", "aws_instance.web: Still creating... [10s elapsed]", "aws_instance.web: Creation complete after 15s [id=i-0abcd1234efgh5678]", "", "Apply complete! Resources: 1 added, 0 changed, 0 destroyed.") }
+    if ($cmd -match '^destroy') { return @("aws_instance.web: Destroying...", "aws_instance.web: Destruction complete after 5s", "", "Destroy complete! Resources: 0 destroyed.") }
+    return @("terraform $cmd")
+}
+
+# -- mysql --
+Register-LCommand "mysql" {
+    param($args)
+    if ($args.Count -eq 0) { return @("mysql  Ver 8.0.35 for Linux on x86_64 (MySQL Community Server - GPL)", "", "Copyright (c) 2000, 2023, Oracle and/or its affiliates.", "", "Usage: mysql [OPTIONS] [database]") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '^-u\s') { return @("Welcome to the MySQL monitor.  Commands end with ; or \g.", "Server version: 8.0.35 MySQL Community Server - GPL", "", "mysql>") }
+    if ($cmd -match '-(h|host)') { return @("ERROR 2003 (HY000): Can't connect to MySQL server on '$($Matches[0])' (111)") }
+    return @("mysql: connection established (simulated)")
 }
 
 # -- clear --

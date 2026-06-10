@@ -1,110 +1,476 @@
 function Get-LearningContent-arch {
-    param([string]$Difficulty = "beginner")
-
     $fs = @{
-        home = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-            student = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
-                info_txt = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                    'Arch Linux - rolling release. Witaj!',
-                    "Zarzadzanie pakietami: pacman",
-                    "Aktualizacja: sudo pacman -Syu",
-                    'Instalacja: sudo pacman -S <pakiet>'
-                )}
-                build = @{ Type = "dir"; Owner = "student"; Group = "student"; Children = @{
-                    PKGBUILD = @{ Type = "file"; Owner = "student"; Group = "student"; Content = @(
-                        "# Maintainer: Student Student <student@archlinux.org>",
-                        "pkgname=hello-world", "pkgver=1.0", "pkgrel=1",
-                        "arch=('x86_64')", "license=('GPL')",
-                        "package() { mkdir -p `$pkgdir/usr/bin; echo 'hello' > `$pkgdir/usr/bin/hello; }"
-                    )}
-                }}
-            }}
-        }}
-        etc = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-            pacman_conf = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
-                "# /etc/pacman.conf", "[options]", "ParallelDownloads = 5",
-                "Color", "CheckSpace", "[core]", "[extra]", "[community]"
-            )}
-            hostname = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @("arch-desktop")}
-            locale_gen = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
-                "en_US.UTF-8 UTF-8", "pl_PL.UTF-8 UTF-8", "de_DE.UTF-8 UTF-8"
-            )}
-        }}
-        var = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-            log = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-                pacman_log = @{ Type = "file"; Owner = "root"; Group = "root"; Content = @(
-                    "[2026-06-01T10:00] [PACMAN] upgraded linux (6.8.0 -> 6.9.0)",
-                    "[2026-06-02T14:30] [PACMAN] installed firefox (126.0)",
-                    "[2026-06-05T09:15] [PACMAN] removed old-kernel (5.15.0)",
-                    "[2026-06-08T08:00] [PACMAN] upgraded systemd (255.0 -> 256.0)"
-                )}
-            }}
-            cache = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{
-                pacman = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{}}
-            }}
-        }}
-        tmp = @{ Type = "dir"; Owner = "root"; Group = "root"; Children = @{}}
+        Type = 'dir'
+        Owner = 'root'
+        Group = 'root'
+        Children = @{
+            'etc' = @{
+                Type = 'dir'; Owner = 'root'; Group = 'root'
+                Children = @{
+                    'os_release' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            'NAME="Arch Linux"',
+                            'PRETTY_NAME="Arch Linux"',
+                            'ID=arch',
+                            'BUILD_ID=rolling',
+                            'ANSI_COLOR="0;36"',
+                            'HOME_URL="https://archlinux.org/"',
+                            'DOCUMENTATION_URL="https://wiki.archlinux.org/"',
+                            'SUPPORT_URL="https://bbs.archlinux.org/"',
+                            'BUG_REPORT_URL="https://gitlab.archlinux.org/groups/archlinux/-/issues"',
+                            'LOGO="archlinux-logo"'
+                        )
+                    }
+                    'hostname' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @('arch-rolling')
+                    }
+                    'hosts' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            '# Static table lookup for hostnames',
+                            '127.0.0.1	localhost',
+                            '::1		localhost',
+                            '127.0.1.1	arch-rolling.localdomain	arch-rolling'
+                        )
+                    }
+                    'locale_conf' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            '# Locale configuration',
+                            'LANG=en_US.UTF-8',
+                            'LC_COLLATE=C',
+                            'LC_TIME=en_GB.UTF-8'
+                        )
+                    }
+                    'locale_gen' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            '# Locale generation file',
+                            'en_US.UTF-8 UTF-8',
+                            'en_GB.UTF-8 UTF-8',
+                            'pl_PL.UTF-8 UTF-8'
+                        )
+                    }
+                    'pacman_conf' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            '# /etc/pacman.conf',
+                            '[options]',
+                            'HoldPkg     = pacman glibc',
+                            'Architecture = auto',
+                            'Color',
+                            'CheckSpace',
+                            'ParallelDownloads = 5',
+                            '# VerbosePkgLists',
+                            '# DisableSandbox',
+                            '',
+                            '[core]',
+                            'Include = /etc/pacman.d/mirrorlist',
+                            '',
+                            '[extra]',
+                            'Include = /etc/pacman.d/mirrorlist',
+                            '',
+                            '[community]',
+                            'Include = /etc/pacman.d/mirrorlist',
+                            '',
+                            '# [multilib]',
+                            '# Include = /etc/pacman.d/mirrorlist'
+                        )
+                    }
+                    'pacman_d' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'mirrorlist' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# Arch Linux repository mirrorlist',
+                                    '# Generated by rankmirrors on 2025-05-15',
+                                    '',
+                                    '## Worldwide',
+                                    'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch',
+                                    '',
+                                    '## Germany',
+                                    'Server = https://archlinux.thaller.ws/$repo/os/$arch',
+                                    '',
+                                    '## Poland',
+                                    'Server = https://mirror.kamcloud.pl/archlinux/$repo/os/$arch',
+                                    '',
+                                    '## United States',
+                                    'Server = https://mirror.rackspace.com/archlinux/$repo/os/$arch',
+                                    'Server = https://mirrors.ocf.berkeley.edu/archlinux/$repo/os/$arch',
+                                    '',
+                                    '## Netherlands',
+                                    'Server = https://mirror.lyrahosting.com/archlinux/$repo/os/$arch'
+                                )
+                            }
+                            'gnupg' = @{
+                                Type = 'dir'; Owner = 'root'; Group = 'root'
+                                Children = @{
+                                    'pubring_gpg' = @{
+                                        Type = 'file'; Owner = 'root'; Group = 'root'
+                                        Content = @('[pacman keyring public keys]')
+                                    }
+                                    'secring_gpg' = @{
+                                        Type = 'file'; Owner = 'root'; Group = 'root'
+                                        Content = @('[pacman keyring secret keys]')
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    'systemd' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'journald_conf' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# /etc/systemd/journald.conf',
+                                    '[Journal]',
+                                    'Storage=auto',
+                                    'Compress=yes',
+                                    'Seal=yes',
+                                    'SystemMaxUse=500M',
+                                    'RuntimeMaxUse=50M',
+                                    'ForwardToSyslog=no',
+                                    'MaxRetentionSec=1month'
+                                )
+                            }
+                            'logind_conf' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# /etc/systemd/logind.conf',
+                                    '[Login]',
+                                    'HandleLidSwitch=suspend',
+                                    'HandleLidSwitchExternalPower=lock',
+                                    'KillUserProcesses=no',
+                                    'NAutoVTs=6'
+                                )
+                            }
+                            'resolved_conf' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# /etc/systemd/resolved.conf',
+                                    '[Resolve]',
+                                    'DNS=1.1.1.1 8.8.8.8',
+                                    'FallbackDNS=9.9.9.9',
+                                    'DNSSEC=allow-downgrade'
+                                )
+                            }
+                        }
+                    }
+                    'default' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'grub' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# GRUB boot loader configuration',
+                                    'GRUB_DEFAULT=0',
+                                    'GRUB_TIMEOUT=5',
+                                    'GRUB_DISTRIBUTOR="Arch"',
+                                    'GRUB_CMDLINE_LINUX_DEFAULT="quiet loglevel=3"',
+                                    'GRUB_CMDLINE_LINUX="root=UUID=12345678-1234-1234-1234-1234567890ab"',
+                                    'GRUB_PRELOAD_MODULES="part_gpt"',
+                                    'GRUB_SAVEDEFAULT=true'
+                                )
+                            }
+                        }
+                    }
+                    'mkinitcpio_conf' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @(
+                            '# /etc/mkinitcpio.conf',
+                            'MODULES=()',
+                            'BINARIES=()',
+                            'FILES=()',
+                            'HOOKS=(base udev autodetect modconf kms keyboard keymap consolefont block filesystems fsck)'
+                        )
+                    }
+                }
+            }
+            'boot' = @{
+                Type = 'dir'; Owner = 'root'; Group = 'root'
+                Children = @{
+                    'vmlinuz-linux-zen' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @('[kernel: Linux linux-zen 6.12.4]')
+                    }
+                    'vmlinuz-linux-lts' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @('[kernel: Linux linux-lts 6.6.63]')
+                    }
+                    'initramfs-linux-zen.img' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @('[initramfs - linux-zen]')
+                    }
+                    'initramfs-linux-lts.img' = @{
+                        Type = 'file'; Owner = 'root'; Group = 'root'
+                        Content = @('[initramfs - linux-lts]')
+                    }
+                    'grub' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'grub_cfg' = @{
+                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                Content = @(
+                                    '# GRUB config generated by grub-mkconfig',
+                                    'set default="0"',
+                                    'set timeout=5',
+                                    '',
+                                    'menuentry "Arch Linux (linux-zen)" {',
+                                    '  linux /vmlinuz-linux-zen root=UUID=12345678-1234-1234-1234-1234567890ab rw quiet',
+                                    '  initrd /initramfs-linux-zen.img',
+                                    '}',
+                                    '',
+                                    'menuentry "Arch Linux (linux-lts)" {',
+                                    '  linux /vmlinuz-linux-lts root=UUID=12345678-1234-1234-1234-1234567890ab rw',
+                                    '  initrd /initramfs-linux-lts.img',
+                                    '}',
+                                    '',
+                                    'menuentry "Arch Linux (fallback initramfs)" {',
+                                    '  linux /vmlinuz-linux-zen root=UUID=12345678-1234-1234-1234-1234567890ab rw',
+                                    '  initrd /initramfs-linux-zen-fallback.img',
+                                    '}'
+                                )
+                            }
+                            'x86_64-efi' = @{
+                                Type = 'dir'; Owner = 'root'; Group = 'root'
+                                Children = @{
+                                    'core_img' = @{
+                                        Type = 'file'; Owner = 'root'; Group = 'root'
+                                        Content = @('[GRUB x86_64-efi core image]')
+                                    }
+                                    'grub_cfg' = @{
+                                        Type = 'file'; Owner = 'root'; Group = 'root'
+                                        Content = @('[embedded config]')
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            'var' = @{
+                Type = 'dir'; Owner = 'root'; Group = 'root'
+                Children = @{
+                    'log' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'journal' = @{
+                                Type = 'dir'; Owner = 'root'; Group = 'root'
+                                Children = @{
+                                    'b4a9c8d7e6f5' = @{
+                                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                                        Children = @{
+                                            'system_journal' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[binary journal data - 8.2 MB]')
+                                            }
+                                            'user-1000_journal' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[binary journal data - 1.1 MB]')
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    'cache' = @{
+                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                        Children = @{
+                            'pacman' = @{
+                                Type = 'dir'; Owner = 'root'; Group = 'root'
+                                Children = @{
+                                    'pkg' = @{
+                                        Type = 'dir'; Owner = 'root'; Group = 'root'
+                                        Children = @{
+                                            'linux-zen-6.12.4-1-x86_64.pkg.tar.zst' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[cached package: linux-zen 6.12.4]')
+                                            }
+                                            'firefox-137.0-1-x86_64.pkg.tar.zst' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[cached package: firefox 137.0]')
+                                            }
+                                            'neovim-0.10.4-1-x86_64.pkg.tar.zst' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[cached package: neovim 0.10.4]')
+                                            }
+                                            'git-2.48.1-1-x86_64.pkg.tar.zst' = @{
+                                                Type = 'file'; Owner = 'root'; Group = 'root'
+                                                Content = @('[cached package: git 2.48.1]')
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            'home' = @{
+                Type = 'dir'; Owner = 'root'; Group = 'root'
+                Children = @{
+                    'student' = @{
+                        Type = 'dir'; Owner = 'student'; Group = 'student'
+                        Children = @{
+                            'projects' = @{
+                                Type = 'dir'; Owner = 'student'; Group = 'student'
+                                Children = @{
+                                    'aur-pkg' = @{
+                                        Type = 'dir'; Owner = 'student'; Group = 'student'
+                                        Children = @{
+                                            'PKGBUILD' = @{
+                                                Type = 'file'; Owner = 'student'; Group = 'student'
+                                                Content = @(
+                                                    '# Maintainer: student <student@arch-rolling>',
+                                                    'pkgname=my-local-tool',
+                                                    'pkgver=1.0.0',
+                                                    'pkgrel=1',
+                                                    'arch=(x86_64)',
+                                                    'license=(MIT)',
+                                                    'depends=(curl jq)',
+                                                    'makedepends=(cmake make gcc)',
+                                                    'source=("https://example.com/$pkgname-$pkgver.tar.gz")',
+                                                    'sha256sums=("SKIP")',
+                                                    '',
+                                                    'build() {',
+                                                    '  cd "$srcdir/$pkgname-$pkgver"',
+                                                    '  cmake -DCMAKE_INSTALL_PREFIX=/usr .',
+                                                    '  make',
+                                                    '}',
+                                                    '',
+                                                    'package() {',
+                                                    '  cd "$srcdir/$pkgname-$pkgver"',
+                                                    '  make DESTDIR="$pkgdir" install',
+                                                    '}'
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            'config' = @{
+                                Type = 'file'; Owner = 'student'; Group = 'student'
+                                Content = @(
+                                    '# Minimal i3wm config',
+                                    'set $mod Mod4',
+                                    'bindsym $mod+Return exec alacritty',
+                                    'bindsym $mod+d exec rofi -show drun',
+                                    'bindsym $mod+Shift+q kill',
+                                    'bindsym $mod+1 workspace 1',
+                                    'bindsym $mod+Shift+1 move container to workspace 1',
+                                    '',
+                                    'exec_always --no-startup-id picom -b',
+                                    'exec_always --no-startup-id nitrogen --restore'
+                                )
+                            }
+                            'bashrc' = @{
+                                Type = 'file'; Owner = 'student'; Group = 'student'
+                                Content = @(
+                                    '# .bashrc - Arch Linux',
+                                    'alias ls="ls --color=auto"',
+                                    'alias ll="ls -la"',
+                                    'alias update="sudo pacman -Syu"',
+                                    'alias orphans="sudo pacman -Rns $(pacman -Qtdq)"',
+                                    'alias yay="yay --sudoloop"',
+                                    'alias neofetch="fastfetch"',
+                                    'export EDITOR=nvim',
+                                    'export VISUAL=nvim'
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    $beginnerTasks = @(
-        @{ Id = 1; Title = "Przeczytaj info"; Difficulty = "beginner"; ExpectedCommand = "cat info_txt"
-            Description = @("Przeczytaj plik informacyjny o Arch Linux."); Hint = "Uzyj: cat info_txt" }
-        @{ Id = 2; Title = "Wyswietl PKGBUILD"; Difficulty = "beginner"; ExpectedCommand = "cat build/PKGBUILD"
-            Description = @("W katalogu build/ znajduje sie plik PKGBUILD. Wyswietl go."); Hint = "Uzyj: cat build/PKGBUILD" }
-        @{ Id = 3; Title = "Utworz katalog"; Difficulty = "beginner"; ExpectedCommand = "mkdir build/pkg"
-            Description = @("W katalogu build utworz podkatalog 'pkg'."); Hint = "Uzyj: mkdir build/pkg" }
-        @{ Id = 4; Title = "Sprawdz pacman.conf"; Difficulty = "beginner"; ExpectedCommand = "cat /etc/pacman_conf"
-            Description = @("Wyswietl konfiguracje menedzera pakietow pacman."); Hint = "Uzyj: cat /etc/pacman_conf" }
-        @{ Id = 5; Title = "Sprawdz locale"; Difficulty = "beginner"; ExpectedCommand = "cat /etc/locale_gen"
-            Description = @("Wyswietl dostepne locale w systemie."); Hint = "Uzyj: cat /etc/locale_gen" }
+    $tasks = @(
+        @{ Id = 1; Title = 'Explore home directory'; Difficulty = 'beginner'
+            ExpectedCommand = 'ls -la /home/student'
+            Description = @('List all files in /home/student including hidden dotfiles.')
+            Hint = 'ls -la /home/student' }
+        @{ Id = 2; Title = 'Check Arch version'; Difficulty = 'beginner'
+            ExpectedCommand = 'cat /etc/os-release'
+            Description = @('Display /etc/os-release to confirm this is Arch Linux (rolling).')
+            Hint = 'cat /etc/os-release' }
+        @{ Id = 3; Title = 'Read the hostname'; Difficulty = 'beginner'
+            ExpectedCommand = 'cat /etc/hostname'
+            Description = @('Check the system hostname in /etc/hostname.')
+            Hint = 'cat /etc/hostname' }
+        @{ Id = 4; Title = 'View hosts file'; Difficulty = 'beginner'
+            ExpectedCommand = 'cat /etc/hosts'
+            Description = @('Read the static hostname lookup table in /etc/hosts.')
+            Hint = 'cat /etc/hosts' }
+        @{ Id = 5; Title = 'Create a project directory'; Difficulty = 'beginner'
+            ExpectedCommand = 'mkdir -p /home/student/projects/aur-pkg'
+            Description = @('Create nested directories for an AUR package project.')
+            Hint = 'mkdir -p <path>' }
+        @{ Id = 6; Title = 'Read pacman config'; Difficulty = 'intermediate'
+            ExpectedCommand = 'cat /etc/pacman.conf'
+            Description = @('Display the pacman configuration to see enabled repos and options.')
+            Hint = 'cat /etc/pacman.conf' }
+        @{ Id = 7; Title = 'Check mirrorlist'; Difficulty = 'intermediate'
+            ExpectedCommand = 'cat /etc/pacman.d/mirrorlist'
+            Description = @('Read the mirrorlist to see which package mirrors are configured.')
+            Hint = 'cat /etc/pacman.d/mirrorlist' }
+        @{ Id = 8; Title = 'Search for enabled repos'; Difficulty = 'intermediate'
+            ExpectedCommand = 'grep "^\[" /etc/pacman.conf'
+            Description = @('Use grep to find all enabled repository sections in pacman.conf.')
+            Hint = 'grep "^\[" /etc/pacman.conf' }
+        @{ Id = 9; Title = 'Check package cache'; Difficulty = 'intermediate'
+            ExpectedCommand = 'ls /var/cache/pacman/pkg/'
+            Description = @('List cached packages in /var/cache/pacman/pkg/.')
+            Hint = 'ls /var/cache/pacman/pkg/' }
+        @{ Id = 10; Title = 'Check disk usage'; Difficulty = 'intermediate'
+            ExpectedCommand = 'df -h'
+            Description = @('Display disk usage in human-readable format.')
+            Hint = 'df -h' }
+        @{ Id = 11; Title = 'Check kernel version in /boot'; Difficulty = 'advanced'
+            ExpectedCommand = 'ls -lh /boot/vmlinuz-*'
+            Description = @('List kernel images in /boot to see available kernel versions.')
+            Hint = 'ls -lh /boot/vmlinuz-*' }
+        @{ Id = 12; Title = 'Read mkinitcpio config'; Difficulty = 'advanced'
+            ExpectedCommand = 'cat /etc/mkinitcpio.conf'
+            Description = @('Display the initramfs configuration file.')
+            Hint = 'cat /etc/mkinitcpio.conf' }
+        @{ Id = 13; Title = 'Check locale settings'; Difficulty = 'advanced'
+            ExpectedCommand = 'cat /etc/locale.conf'
+            Description = @('Read the system locale configuration.')
+            Hint = 'cat /etc/locale.conf' }
+        @{ Id = 14; Title = 'Check memory usage'; Difficulty = 'advanced'
+            ExpectedCommand = 'free -h'
+            Description = @('Display memory usage in human-readable format.')
+            Hint = 'free -h' }
+        @{ Id = 15; Title = 'View journalctl logs'; Difficulty = 'advanced'
+            ExpectedCommand = 'journalctl --no-pager -n 15'
+            Description = @('View the 15 most recent systemd journal entries.')
+            Hint = 'journalctl --no-pager -n 15' }
+        @{ Id = 16; Title = 'Find all config files'; Difficulty = 'expert'
+            ExpectedCommand = 'find /etc -name "*.conf" -type f 2>/dev/null | sort'
+            Description = @('Find and sort all .conf files under /etc.')
+            Hint = 'find /etc -name "*.conf" -type f 2>/dev/null | sort' }
+        @{ Id = 17; Title = 'Read bootloader config'; Difficulty = 'expert'
+            ExpectedCommand = 'cat /boot/grub/grub.cfg | grep menuentry'
+            Description = @('Extract menuentry lines from the GRUB configuration.')
+            Hint = 'cat /boot/grub/grub.cfg | grep menuentry' }
+        @{ Id = 18; Title = 'Backup with tar'; Difficulty = 'expert'
+            ExpectedCommand = 'tar czf /tmp/arch-home-backup.tar.gz -C /home student --exclude=cache'
+            Description = @('Create a compressed backup of /home/student excluding cache dirs.')
+            Hint = 'tar czf /tmp/backup.tar.gz -C /home student --exclude=cache' }
+        @{ Id = 19; Title = 'Analyze journal with grep'; Difficulty = 'expert'
+            ExpectedCommand = 'journalctl --no-pager -p err | grep -oP "kernel:.*" | head -10'
+            Description = @('Extract kernel error messages from the journal.')
+            Hint = 'journalctl --no-pager -p err | grep -oP "kernel:.*" | head -10' }
+        @{ Id = 20; Title = 'Sort and count config types'; Difficulty = 'expert'
+            ExpectedCommand = 'find /etc -name "*.conf" -type f 2>/dev/null | grep -oP "[^/]+$" | awk -F. "{print \$NF}" | sort | uniq -c | sort -rn'
+            Description = @('Extract extensions from config files, count each type, sort by frequency.')
+            Hint = 'find /etc -name "*.conf" | grep -oP extensions | sort | uniq -c | sort -rn' }
     )
 
-    $intermediateTasks = @(
-        @{ Id = 6; Title = "Historia pacmana"; Difficulty = "intermediate"; ExpectedCommand = "grep 'upgraded' /var/log/pacman_log"
-            Description = @("Znajdz w logu pacmana wszystkie aktualizacje."); Hint = "Uzyj: grep 'upgraded' /var/log/pacman_log" }
-        @{ Id = 7; Title = "Kopiuj PKGBUILD"; Difficulty = "intermediate"; ExpectedCommand = "cp build/PKGBUILD ~/PKGBUILD.backup"
-            Description = @("Wykonaj kopie zapasowa pliku PKGBUILD."); Hint = "Uzyj: cp build/PKGBUILD ~/PKGBUILD.backup" }
-        @{ Id = 8; Title = "Usun tymczasowy"; Difficulty = "intermediate"; ExpectedCommand = "rm ~/PKGBUILD.backup"
-            Description = @("Usun plik PKGBUILD.backup z katalogu domowego."); Hint = "Uzyj: rm ~/PKGBUILD.backup" }
-        @{ Id = 9; Title = "Sprawdz dysk"; Difficulty = "intermediate"; ExpectedCommand = "df"
-            Description = @("Sprawdz uzycie dyskow w systemie."); Hint = "Uzyj: df" }
-        @{ Id = 10; Title = "Kto jestem"; Difficulty = "intermediate"; ExpectedCommand = "id"
-            Description = @("Sprawdz swoj identyfikator uzytkownika (UID)."); Hint = "Uzyj: id" }
-    )
-
-    $advancedTasks = @(
-        @{ Id = 11; Title = "Logi pacmana"; Difficulty = "advanced"; ExpectedCommand = "head -3 /var/log/pacman_log"
-            Description = @("Wyswietl pierwsze 3 linie logu pacmana."); Hint = "Uzyj: head -3 /var/log/pacman_log" }
-        @{ Id = 12; Title = "Znajdz pliki konfiguracyjne"; Difficulty = "advanced"; ExpectedCommand = "find /etc -name '*conf*'"
-            Description = @("Znajdz wszystkie pliki z 'conf' w nazwie w /etc."); Hint = "Uzyj: find /etc -name '*conf*'" }
-        @{ Id = 13; Title = "Zapisz logi"; Difficulty = "advanced"; ExpectedCommand = "cat /var/log/pacman_log > ~/pacman_history.txt"
-            Description = @("Zapisz log pacmana do pliku w katalogu domowym."); Hint = "Uzyj: cat /var/log/pacman_log > ~/pacman_history.txt" }
-        @{ Id = 14; Title = "Statystyki katalogu"; Difficulty = "advanced"; ExpectedCommand = "du -sh /var/log"
-            Description = @("Sprawdz rozmiar katalogu /var/log."); Hint = "Uzyj: du -sh /var/log" }
-        @{ Id = 15; Title = "Wyswietl procesy"; Difficulty = "advanced"; ExpectedCommand = "ps aux | grep systemd"
-            Description = @("Znajdz procesy systemd uzywajac ps i grep."); Hint = "Uzyj: ps aux | grep systemd" }
-    )
-
-    $expertTasks = @(
-        @{ Id = 16; Title = "Liczenie logow"; Difficulty = "expert"; ExpectedCommand = "wc -l /var/log/pacman_log"
-            Description = @("Policz, ile linii ma log pacmana."); Hint = "Uzyj: wc -l /var/log/pacman_log" }
-        @{ Id = 17; Title = "Unikalne pakiety"; Difficulty = "expert"; ExpectedCommand = "grep -o 'firefox\|linux\|systemd' /var/log/pacman_log | sort | uniq"
-            Description = @("Uzyj grep, sort i uniq aby znalezc unikalne pakiety w logu."); Hint = "To zlozone zadanie. Sprobuj: grep -o 'firefox\|linux\|systemd' /var/log/pacman_log | sort | uniq" }
-        @{ Id = 18; Title = "Ktore polecenie"; Difficulty = "expert"; ExpectedCommand = "which pacman"
-            Description = @("Sprawdz, gdzie w systemie znajduje sie pacman."); Hint = "Uzyj: which pacman" }
-        @{ Id = 19; Title = "Info o uzytkowniku"; Difficulty = "expert"; ExpectedCommand = "whoami"
-            Description = @("Sprawdz, jako kto jestes zalogowany."); Hint = "Uzyj: whoami" }
-        @{ Id = 20; Title = "Sprawdz kernela"; Difficulty = "expert"; ExpectedCommand = "uname -m"
-            Description = @("Sprawdz architekture procesora (uname -m)."); Hint = "Uzyj: uname -m" }
-    )
-
-    $tasks = @()
-    switch ($Difficulty) {
-        "beginner" { $tasks = $beginnerTasks }
-        "intermediate" { $tasks = $intermediateTasks }
-        "advanced" { $tasks = $advancedTasks }
-        "expert" { $tasks = $expertTasks }
-        default { $tasks = $beginnerTasks }
-    }
     return @{ Filesystem = $fs; Tasks = $tasks }
 }
