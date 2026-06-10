@@ -1,5 +1,5 @@
-# =====================================================================
-# LEARNING ENGINE — Virtual FS, command parser, task system
+﻿# =====================================================================
+# LEARNING ENGINE - Virtual FS, command parser, task system
 # =====================================================================
 
 $script:learningVfs = @{}
@@ -14,6 +14,8 @@ $script:learningCompletedTasks = @{}
 $script:learningSudo = $false
 $script:learningHintUsed = @{}
 $script:learningSkippedTasks = @{}
+$script:learningHistory = [System.Collections.Generic.List[string]]::new()
+$script:learningHistoryIdx = -1
 
 # ===================================================================
 # FILESYSTEM CORE
@@ -558,7 +560,7 @@ Register-LCommand "systemctl" {
     if ($args.Count -lt 2) { return @("systemctl: missing argument") }
     $action = $args[0]; $service = $args[1]
     if ($action -eq "status") {
-        return @("● ${service}.service - $service server daemon",
+        return @("* ${service}.service - $service server daemon",
             "     Loaded: loaded (/lib/systemd/system/${service}.service; enabled; preset: enabled)",
             "     Active: active (running) since $(Get-Date -Format 'ddd yyyy-MM-dd HH:mm:ss') UTC; 2 days ago",
             "   Main PID: 1245 (${service})",
@@ -1176,7 +1178,7 @@ function Process-LSpecialCommand {
         ".hint" {
             $script:learningHintUsed[$script:learningCurrentTask] = $true
             $hint = $task.Hint
-            if ([string]::IsNullOrEmpty($hint)) { $hint = "Spróbuj użyć komendy: $($task.ExpectedCommand)" }
+            if ([string]::IsNullOrEmpty($hint)) { $hint = "Sprobuj uzyc komendy: $($task.ExpectedCommand)" }
             return @("", "  [HINT] $hint", "")
         }
         ".skip" {
@@ -1226,19 +1228,39 @@ function Check-CommandMatches {
 }
 
 # ===================================================================
-# INPUT READER — free typing with backspace support
+# INPUT READER - free typing with backspace support
 # ===================================================================
 
 function Read-LearningInput {
+    param([string]$PromptLen = "")
     $buffer = ""
     $cursor = 0
+    $script:learningHistoryIdx = $script:learningHistory.Count
+
+    function Redraw-Line {
+        param([string]$newBuf, [int]$promptX)
+        $pos = Get-CursorPosition
+        Set-CursorPosition -X $promptX -Y $pos.Y
+        $padded = $newBuf + (" " * [Math]::Max(0, $buffer.Length - $newBuf.Length))
+        Write-Host -NoNewline $padded -ForegroundColor White
+        Set-CursorPosition -X ($promptX + $newBuf.Length) -Y $pos.Y
+    }
+
+    $promptX = (Get-CursorPosition).X
+
     while ($true) {
         $k = Read-ConsoleKey
         if (-not $k) { Start-Sleep -Milliseconds 10; continue }
 
         if ($k.Key -eq "Escape") { return "__ESCAPE__" }
         if ($k.Key -eq "Enter") {
-            if ($buffer.Length -gt 0) { $script:learningLastCmd = $buffer }
+            if ($buffer.Length -gt 0) {
+                $script:learningLastCmd = $buffer
+                if ($script:learningHistory.Count -eq 0 -or $script:learningHistory[$script:learningHistory.Count - 1] -ne $buffer) {
+                    $script:learningHistory.Add($buffer)
+                    if ($script:learningHistory.Count -gt 20) { $script:learningHistory.RemoveAt(0) }
+                }
+            }
             Write-Host ""
             return $buffer
         }
@@ -1246,40 +1268,71 @@ function Read-LearningInput {
             if ($cursor -gt 0) {
                 $buffer = $buffer.Substring(0, $cursor - 1) + $buffer.Substring($cursor)
                 $cursor--
-                # Redraw line
-                $pos = Get-CursorPosition
-                Set-CursorPosition -X 0 -Y $pos.Y
-                Write-Host (" " * ($buffer.Length + 2)) -NoNewline
-                Set-CursorPosition -X 0 -Y $pos.Y
-                if ($buffer.Length -gt 0) { Write-Host -NoNewline $buffer -ForegroundColor White }
-                Write-Host -NoNewline ""
+                Redraw-Line $buffer $promptX
+                Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
             }
+            continue
+        }
+        if ($k.Key -eq "Delete") {
+            if ($cursor -lt $buffer.Length) {
+                $buffer = $buffer.Substring(0, $cursor) + $buffer.Substring($cursor + 1)
+                Redraw-Line $buffer $promptX
+                Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
+            }
+            continue
+        }
+        if ($k.Key -eq "LeftArrow") {
+            if ($cursor -gt 0) { $cursor--; Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y }
+            continue
+        }
+        if ($k.Key -eq "RightArrow") {
+            if ($cursor -lt $buffer.Length) { $cursor++; Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y }
+            continue
+        }
+        if ($k.Key -eq "Home") {
+            $cursor = 0; Set-CursorPosition -X $promptX -Y (Get-CursorPosition).Y
+            continue
+        }
+        if ($k.Key -eq "End") {
+            $cursor = $buffer.Length; Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
             continue
         }
         if ($k.Key -eq "UpArrow") {
-            if ($script:learningLastCmd) {
-                $pos = Get-CursorPosition
-                Set-CursorPosition -X 0 -Y $pos.Y
-                Write-Host (" " * [Math]::Max($buffer.Length + 2, 40)) -NoNewline
-                Set-CursorPosition -X 0 -Y $pos.Y
-                $buffer = $script:learningLastCmd
+            if ($script:learningHistory.Count -gt 0 -and $script:learningHistoryIdx -gt 0) {
+                $script:learningHistoryIdx--
+                $buffer = $script:learningHistory[$script:learningHistoryIdx]
                 $cursor = $buffer.Length
-                Write-Host -NoNewline $buffer -ForegroundColor White
+                Redraw-Line $buffer $promptX
+                Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
             }
             continue
         }
-        if ($k.KeyChar -and $k.KeyChar -ne "`0") {
+        if ($k.Key -eq "DownArrow") {
+            if ($script:learningHistoryIdx -lt $script:learningHistory.Count - 1) {
+                $script:learningHistoryIdx++
+                $buffer = $script:learningHistory[$script:learningHistoryIdx]
+            } else {
+                $script:learningHistoryIdx = $script:learningHistory.Count
+                $buffer = ""
+            }
+            $cursor = $buffer.Length
+            Redraw-Line $buffer $promptX
+            Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
+            continue
+        }
+        if ($k.KeyChar -and $k.KeyChar -ne "`0" -and $k.Key -ne "Tab") {
             $ch = $k.KeyChar
             $buffer = $buffer.Substring(0, $cursor) + $ch + $buffer.Substring($cursor)
             $cursor++
-            Write-Host -NoNewline $ch -ForegroundColor White
+            Redraw-Line $buffer $promptX
+            Set-CursorPosition -X ($promptX + $cursor) -Y (Get-CursorPosition).Y
         }
         Start-Sleep -Milliseconds 5
     }
 }
 
 # ===================================================================
-# LEARNING SESSION — interactive loop
+# LEARNING SESSION - interactive loop
 # ===================================================================
 
 function Start-LearningSession {
@@ -1288,7 +1341,7 @@ function Start-LearningSession {
         [string]$Hostname = "ubuntu",
         [string]$Username = "student",
         [string]$OsName = "Ubuntu 24.04 LTS",
-        [string]$PromptString = "student@ubuntu:~$",
+        [string]$PromptString = "student@ubuntu:~`$",
         [hashtable]$Filesystem,
         [array]$Tasks,
         [hashtable]$Theme
@@ -1304,6 +1357,8 @@ function Start-LearningSession {
     $script:learningHintUsed = @{}
     $script:learningSkippedTasks = @{}
     $script:learningLastCmd = ""
+    $script:learningHistory = [System.Collections.Generic.List[string]]::new()
+    $script:learningHistoryIdx = -1
 
     $Host.UI.RawUI.BackgroundColor = "Black"
     $Host.UI.RawUI.ForegroundColor = "Green"
@@ -1317,7 +1372,7 @@ function Start-LearningSession {
 
     # Welcome
     Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     TRYB NAUKI — $SystemName" -ForegroundColor Green
+    Write-Host "     TRYB NAUKI - $SystemName" -ForegroundColor Green
     Write-Host "     Tryb: interaktywny symulator terminala" -ForegroundColor DarkGray
     Write-Host "  ========================================" -ForegroundColor Cyan
     Write-Host ""
@@ -1357,19 +1412,26 @@ function Start-LearningSession {
                 default { $task.Difficulty }
             }
 
+            $total = $script:learningTasks.Count
+            $done = $script:learningCompletedTasks.Keys.Count
+            $barFilled = [Math]::Floor(($done / [Math]::Max(1, $total)) * 20)
+            $progressBar = ([string][char]0x2588 * $barFilled) + ([string][char]0x2591 * (20 - $barFilled))
+            $pct = [Math]::Floor(($done / [Math]::Max(1, $total)) * 100)
+
             Write-Host ""
-            Write-Host "  $("=" * 45)" -ForegroundColor $Theme.accent
-            Write-Host "  Zadanie $($script:learningCurrentTask + 1)/$($script:learningTasks.Count)" -ForegroundColor Cyan
-            Write-Host "  Poziom: $difficultyLabel" -ForegroundColor $Theme.accent
-            Write-Host "  $("=" * 45)" -ForegroundColor $Theme.accent
+            Write-Host "  $([char]0x250C)$([char]0x2500 * 47)$([char]0x2510)" -ForegroundColor $Theme.accent
+            Write-Host ("  $([char]0x2502) Zadanie {0}/{1}  [{2}] {3,3}% $([char]0x2502)" -f ($script:learningCurrentTask + 1), $total, $progressBar, $pct) -ForegroundColor Cyan
+            Write-Host ("  $([char]0x2502) $($task.Title.PadRight(45))$([char]0x2502)") -ForegroundColor White
+            Write-Host ("  $([char]0x2502) Poziom: $($difficultyLabel.PadRight(40))$([char]0x2502)") -ForegroundColor $Theme.accent
+            Write-Host "  $([char]0x2514)$([char]0x2500 * 47)$([char]0x2518)" -ForegroundColor $Theme.accent
             Write-Host ""
             foreach ($td in $task.Description) {
                 Write-Host "    $td" -ForegroundColor Gray
             }
             Write-Host ""
-            Write-Host "  Wpisz .hint po podpowiedz, .skip aby pominac." -ForegroundColor DarkGray
+            Write-Host "  [.hint] podpowiedz  [.skip] pomin  [.status] postep  [.exit] wyjdz" -ForegroundColor DarkGray
             Write-Host ""
-            Start-Sleep -Milliseconds 500
+            Start-Sleep -Milliseconds 300
         }
 
         # Command loop for this task
@@ -1435,7 +1497,14 @@ function Start-LearningSession {
                 $total = $script:learningTasks.Count
                 $done = $script:learningCompletedTasks.Keys.Count
                 $skipped = $script:learningSkippedTasks.Keys.Count
-                Write-Host ""; Write-Host "  Wykonane: $done/$total | Pominiete: $skipped | Biezace: $($script:learningCurrentTask + 1)/$total" -ForegroundColor Cyan; Write-Host ""
+                $hints = $script:learningHintUsed.Keys.Count
+                $barFilled = [Math]::Floor(($done / [Math]::Max(1, $total)) * 30)
+                $bar = ([string][char]0x2588 * $barFilled) + ([string][char]0x2591 * (30 - $barFilled))
+                $pct = [Math]::Floor(($done / [Math]::Max(1, $total)) * 100)
+                Write-Host ""
+                Write-Host "  [$bar] $pct%" -ForegroundColor Cyan
+                Write-Host "  Wykonane: $done/$total  Pominiete: $skipped  Podpowiedzi: $hints  Biezace: $($script:learningCurrentTask + 1)/$total" -ForegroundColor Gray
+                Write-Host ""
                 continue
             }
 
@@ -1496,26 +1565,48 @@ function Start-LearningSession {
     $total = $script:learningTasks.Count
     $done = $script:learningCompletedTasks.Keys.Count
     $skipped = $script:learningSkippedTasks.Keys.Count
+    $hints = $script:learningHintUsed.Keys.Count
 
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host "     KONIEC — Tryb nauki: $SystemName" -ForegroundColor Green
-    Write-Host "  ========================================" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "  Wyniki:" -ForegroundColor Gray
-    Write-Host "  Wykonane:  $done/$total" -ForegroundColor Cyan
-    Write-Host "  Pominiete: $skipped/$total" -ForegroundColor Yellow
-    Write-Host "  Podpowiedzi uzyto: $($script:learningHintUsed.Keys.Count)" -ForegroundColor DarkGray
-    Write-Host ""
-
-    if ($done -eq $total) {
-        Write-Host "  Wszystkie zadania wykonane! Gratulacje!" -ForegroundColor Green
-    } else {
-        Write-Host "  Nacisnij ENTER aby wrocic do menu." -ForegroundColor DarkGray
-        while ($true) { $k = Read-ConsoleKey; if ($k -and ($k.Key -eq "Enter" -or $k.Key -eq "Escape")) { break }; Start-Sleep -Milliseconds 50 }
+    $scoreRaw = if ($total -gt 0) { ($done / $total) * 100 - ($hints * 5) - ($skipped * 10) } else { 0 }
+    $score = [Math]::Max(0, [Math]::Min(100, [Math]::Round($scoreRaw)))
+    $grade = switch ($true) {
+        { $score -ge 95 } { "S  (Mistrz!)" }
+        { $score -ge 80 } { "A  (Swietnie!)" }
+        { $score -ge 65 } { "B  (Dobrze)" }
+        { $score -ge 50 } { "C  (Srednia)" }
+        { $score -ge 30 } { "D  (Cwicz wiecej)" }
+        default            { "F  (Sprobuj jeszcze raz)" }
     }
+    $gradeColor = switch ($true) {
+        { $score -ge 80 } { "Green" }
+        { $score -ge 50 } { "Yellow" }
+        default            { "Red" }
+    }
+    $barFilled = [Math]::Floor($score / 5)
+    $bar = ([string][char]0x2588 * $barFilled) + ([string][char]0x2591 * (20 - $barFilled))
+
+    Write-Host ""
+    Write-Host "  $([char]0x250C)$([char]0x2500 * 47)$([char]0x2510)" -ForegroundColor Cyan
+    $header = "  SESJA ZAKONCZONA - $SystemName"
+    Write-Host "  $([char]0x2502)$($header.PadRight(47))$([char]0x2502)" -ForegroundColor Green
+    Write-Host "  $([char]0x2514)$([char]0x2500 * 47)$([char]0x2518)" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host ("  Wynik:        [$bar] {0}%" -f $score) -ForegroundColor $gradeColor
+    Write-Host "  Ocena:        $grade" -ForegroundColor $gradeColor
+    Write-Host ""
+    Write-Host "  Wykonane:     $done/$total" -ForegroundColor Cyan
+    Write-Host "  Pominiete:    $skipped/$total" -ForegroundColor Yellow
+    Write-Host "  Podpowiedzi:  $hints" -ForegroundColor DarkGray
+    Write-Host ""
+
+    if ($done -eq $total -and $hints -eq 0 -and $skipped -eq 0) {
+        Write-Host "  Idealne wykonanie! Gratulacje!" -ForegroundColor Green
+    }
+    Write-Host "  Nacisnij ENTER aby wrocic do menu." -ForegroundColor DarkGray
+    while ($true) { $k = Read-ConsoleKey; if ($k -and ($k.Key -eq "Enter" -or $k.Key -eq "Escape")) { break }; Start-Sleep -Milliseconds 50 }
 
     Clear-Host
-    Matrix-Rain -Infinite -Theme $Theme
+    Matrix-Rain -DurationSeconds 3 -Theme $Theme
     Start-Sleep -Milliseconds 500
     try { [console]::CursorVisible = $true } catch { }
 }

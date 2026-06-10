@@ -111,9 +111,11 @@ function Show-GuiLauncher {
 
     $x = 25; $y = 95; $i = 0
     foreach ($m in $modes) {
-        $themeColor = $script:Themes[$m.Id].promptColor
+        $themeEntry = $script:Themes[$m.Id]
+        $themeColor = if ($themeEntry -and $themeEntry.promptColor) { $themeEntry.promptColor } else { "Gray" }
         $btn = New-Object System.Windows.Forms.Button
         $btn.Text = "$($m.Name)"
+        $btn.Tag = $m.Id
         $btn.Size = New-Object Drawing.Size(240, 55)
         $btn.Location = New-Object Drawing.Point($x, $y)
         $btn.BackColor = [Drawing.Color]::FromArgb(20, 20, 20)
@@ -123,9 +125,8 @@ function Show-GuiLauncher {
         $btn.FlatAppearance.BorderColor = [Drawing.Color]::FromArgb(60, 60, 60)
         $btn.FlatAppearance.MouseOverBackColor = [Drawing.Color]::FromArgb(40, 40, 40)
         $btn.Cursor = [Windows.Forms.Cursors]::Hand
-        $id = $m.Id
         $btn.Add_Click({
-            $script:selectedMode = $id
+            $script:selectedMode = $this.Tag
             $script:selectedTheme = $script:savedTheme
             $form.Close()
         })
