@@ -1,5 +1,5 @@
 ﻿# =====================================================================
-# THEMES â€" color palettes, matrix char sets, mode metadata
+# THEMES - color palettes, matrix char sets, mode metadata
 # =====================================================================
 
 $script:Themes = @{

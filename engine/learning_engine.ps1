@@ -1299,6 +1299,108 @@ Register-LCommand "mysql" {
     return @("mysql: connection established (simulated)")
 }
 
+# -- crontab --
+Register-LCommand "crontab" {
+    param($args)
+    if ($args -contains "-l") { return @("# Edit this file to introduce tasks to be run by cron.", "# m h  dom mon dow   command", "0 2 * * * /usr/bin/backup.sh", "*/5 * * * * /usr/bin/healthcheck.sh > /dev/null 2>&1") }
+    if ($args -contains "-e") { return @("(crontab editor simulated - press Ctrl+X to save in nano)") }
+    if ($args -contains "-r") { return @("crontab: removed") }
+    return @("crontab: usage: crontab [-u user] [-l] [-r] [-e]")
+}
+
+# -- iptables / firewall-cmd --
+Register-LCommand "iptables" {
+    param($args)
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match "-L") { return @("Chain INPUT (policy DROP)", "target     prot opt source               destination", "ACCEPT     all  --  anywhere             anywhere             state RELATED,ESTABLISHED", "ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh", "ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:http", "ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:https", "Chain FORWARD (policy DROP)", "Chain OUTPUT (policy ACCEPT)") }
+    if ($cmd -match "-A") { return @() }
+    if ($cmd -match "-D") { return @() }
+    return @("iptables v1.8.9 (nf_tables)")
+}
+Register-LCommand "firewall-cmd" {
+    param($args)
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match "--state") { return @("running") }
+    if ($cmd -match "--list-all") { return @("public (active)", "  interfaces: eth0", "  sources:", "  services: dhcpv6-client http https ssh", "  ports: 8080/tcp", "  protocols:", "  masquerade: no") }
+    if ($cmd -match "--add-service|--remove-service|--add-port") { return @("success") }
+    if ($cmd -match "--reload") { return @("success") }
+    return @("firewall-cmd: state running (simulated)")
+}
+
+# -- sestatus / setenforce --
+Register-LCommand "sestatus" {
+    return @("SELinux status:                 enabled", "SELinuxmount:              /sys/fs/selinux", "SELinuxfs mount:                /sys/fs/selinux", "SELinux mount state:            enforcing", "Current mode:                   enforcing", "Mode from config file:          enforcing", "Policy MLS status:              enabled", "Policy deny_unknown status:     allowed", "Memory protection checking:     actual (secure)", "Max kernel policy version:      33")
+}
+Register-LCommand "setenforce" {
+    param($args)
+    if ($args.Count -gt 0) { return @("SELinux set to: $($args[0]) (simulated)") }
+    return @("setenforce: usage: setenforce [ Enforcing | Permissive | 1 | 0 ]")
+}
+
+# -- service --
+Register-LCommand "service" {
+    param($args)
+    if ($args.Count -lt 2) { return @("Usage: service <service> <start|stop|restart|status|reload>") }
+    $svc = $args[0]; $action = $args[1]
+    switch ($action) {
+        "status"  { return @("${svc} is running.") }
+        "start"   { return @("Starting ${svc}: OK") }
+        "stop"    { return @("Stopping ${svc}: OK") }
+        "restart" { return @("Restarting ${svc}: OK") }
+        "reload"  { return @("Reloading ${svc} config: OK") }
+        default   { return @("${svc}: unrecognized service command '$action'") }
+    }
+}
+
+# -- useradd / usermod / passwd --
+Register-LCommand "useradd" {
+    param($args)
+    if ($args.Count -eq 0) { return @("useradd: option requires an argument") }
+    $user = $args[-1]
+    return @("useradd: user '$user' created")
+}
+Register-LCommand "usermod" {
+    param($args)
+    return @()
+}
+Register-LCommand "passwd" {
+    param($args)
+    $user = if ($args.Count -gt 0) { $args[0] } else { $script:learningUser }
+    return @("Changing password for $user.", "New password: (simulated)", "Retype new password: (simulated)", "passwd: password updated successfully")
+}
+Register-LCommand "groups" {
+    param($args)
+    $user = if ($args.Count -gt 0) { $args[0] } else { $script:learningUser }
+    return @("$user : $user sudo docker")
+}
+
+# -- mount / umount --
+Register-LCommand "mount" {
+    param($args)
+    if ($args.Count -eq 0) {
+        return @("sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime)", "proc on /proc type proc (rw,nosuid,nodev,noexec,relatime)", "/dev/sda1 on / type ext4 (rw,relatime)", "/dev/sdb1 on /mnt/backup type ext4 (rw,relatime)")
+    }
+    return @("mount: $($args -join ' ') mounted (simulated)")
+}
+Register-LCommand "umount" {
+    param($args)
+    return @()
+}
+
+# -- psql --
+Register-LCommand "psql" {
+    param($args)
+    if ($args.Count -eq 0) { return @("psql (PostgreSQL) 16.2", "Type 'help' for help.", "", "postgres=#") }
+    $cmd = "$($args -join ' ')"
+    if ($cmd -match '-c\s+(.+)') {
+        $q = $Matches[1].Trim('"''')
+        if ($q -imatch '^\s*\\l') { return @("                                  List of databases", "   Name    |  Owner   | Encoding |   Collate   |    Ctype    ", "-----------+----------+----------+-------------+-------------", " myapp    | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 ", " postgres | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 ") }
+        if ($q -imatch 'SELECT') { return @(" id | name       ", "----+------------", "  1 | Alice      ", "  2 | Bob        ", "(2 rows)") }
+        return @("$q", "(simulated result)")
+    }
+    return @("psql: connection established (simulated)", "psql>")
+}
+
 # -- clear --
 Register-LCommand "clear" {
     return @("__CLEAR__")

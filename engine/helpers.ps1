@@ -12,12 +12,19 @@ function Read-ConsoleKey {
             if (-not $Host.UI.RawUI.KeyAvailable) { return $null }
             $k = $Host.UI.RawUI.ReadKey([System.Management.Automation.Host.ReadKeyOptions]::NoEcho -bor [System.Management.Automation.Host.ReadKeyOptions]::IncludeKeyDown)
             $vc = $k.VirtualKeyCode
-            if ($vc -eq 27) { return @{ Key = "Escape"; KeyChar = "`0" } }
-            if ($vc -eq 13) { return @{ Key = "Enter"; KeyChar = "`r" } }
-            if ($vc -eq 8)  { return @{ Key = "Backspace"; KeyChar = "`b" } }
-            if ($vc -eq 38) { return @{ Key = "UpArrow"; KeyChar = "`0" } }
-            if ($vc -eq 9)  { return @{ Key = "Tab"; KeyChar = "`t" } }
-            if ($vc -eq 16 -or $vc -eq 17) { return @{ Key = "Modifier"; KeyChar = "`0" } }
+            if ($vc -eq 27) { return @{ Key = "Escape";     KeyChar = "`0" } }
+            if ($vc -eq 13) { return @{ Key = "Enter";      KeyChar = "`r" } }
+            if ($vc -eq 8)  { return @{ Key = "Backspace";  KeyChar = "`b" } }
+            if ($vc -eq 9)  { return @{ Key = "Tab";        KeyChar = "`t" } }
+            if ($vc -eq 38) { return @{ Key = "UpArrow";    KeyChar = "`0" } }
+            if ($vc -eq 40) { return @{ Key = "DownArrow";  KeyChar = "`0" } }
+            if ($vc -eq 37) { return @{ Key = "LeftArrow";  KeyChar = "`0" } }
+            if ($vc -eq 39) { return @{ Key = "RightArrow"; KeyChar = "`0" } }
+            if ($vc -eq 36) { return @{ Key = "Home";       KeyChar = "`0" } }
+            if ($vc -eq 35) { return @{ Key = "End";        KeyChar = "`0" } }
+            if ($vc -eq 46) { return @{ Key = "Delete";     KeyChar = "`0" } }
+            if ($vc -eq 32) { return @{ Key = "Spacebar";   KeyChar = " "  } }
+            if ($vc -eq 16 -or $vc -eq 17 -or $vc -eq 18) { return @{ Key = "Modifier"; KeyChar = "`0" } }
             return @{ Key = $k.Character.ToString().ToUpper(); KeyChar = $k.Character }
         } catch { return $null }
     }
